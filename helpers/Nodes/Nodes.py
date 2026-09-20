@@ -20,6 +20,7 @@ Features
   * APICli: headless subclass of API, for building graphs offline
 """
 
+import ast
 import os
 import re
 import sys
@@ -7612,6 +7613,10 @@ class MainWindow(QMainWindow):
                 val = json.loads(payload)
             except Exception:
                 val = payload
+            # A node whose return value is None has nothing useful
+            # to say in the shell strip; skip it.
+            if str(val).strip() == "None":
+                return
             node.append_output(val)
         elif cmd == "full":
             try:
@@ -8067,6 +8072,7 @@ class MainWindow(QMainWindow):
             return ""
 
         def _lit(s):
+            import ast as _ast_local
             if s is None or s.value is None:
                 return None
             v = str(s.value).strip()
@@ -8074,11 +8080,9 @@ class MainWindow(QMainWindow):
                 return "''"
 
             # Human-friendly forms for the *args and **kwargs sockets
-            # produced by create.py for functions like hotkey(*args,
-            # **kwargs) or nn.Sequential(*args).
+            # produced by create.py.
             nm = getattr(s, "name", "") or ""
             if nm.startswith("**"):
-                # `interval=0.2, timeout=5` -> `{'interval': 0.2, 'timeout': 5}`
                 if not v.startswith("{"):
                     pairs = []
                     for piece in v.split(","):
@@ -8090,30 +8094,24 @@ class MainWindow(QMainWindow):
                                      % (k.strip(), val.strip()))
                     v = "{" + ", ".join(pairs) + "}"
             elif nm.startswith("*"):
-                # `ctrl, c` or `1, 2, 3` -> `['ctrl', 'c']`
                 if not v.startswith(("[", "(")):
                     v = "[" + v + "]"
+
             if v in ("True", "False", "None"):
                 return v
-            if v[0].isdigit() or v[0] in "-+.[({":
-                return v
-            if v.endswith((")", "]", "}")):
-                return v
-            # Already a quoted string: keep as-is.
-            if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
-                return v
-            # String-typed sockets always become string literals.
+
+            # String-typed sockets are always quoted.
             stype = getattr(s, "socket_type", "any")
             if stype == "string":
                 return repr(v)
-            # Bare dotted identifier on an `any` socket: treat it as a
-            # variable reference so `n * n` does not become `'n' * 'n'`.
-            # Python keywords and non-identifiers fall through and get quoted.
-            if (_re.match(r"^[A-Za-z_][A-Za-z0-9_]*"
-                          r"(\.[A-Za-z_][A-Za-z0-9_]*)*$", v)
-                    and not _kw.iskeyword(v)):
+
+            # For non-string sockets, decide between "bare expression"
+            # and "quoted string" by asking Python's parser.
+            try:
+                _ast_local.parse(v, mode="eval")
                 return v
-            return repr(v)
+            except SyntaxError:
+                return repr(v)
 
 
         def _binds(n):
@@ -8618,7 +8616,7 @@ class MainWindow(QMainWindow):
             if kind == "import_stmt":
                 m = str(B.get("Module") or "'os'").strip("'\"")
                 L.append("%simport %s" % (pad, m))
-                L.append("%s%s = None" % (pad, var))
+                L.append("%s%s = %r" % (pad, var, "imported " + m))
                 return L, miss
             if kind == "from_import":
                 m = str(B.get("Module") or "'os'").strip("'\"")

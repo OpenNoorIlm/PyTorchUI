@@ -1,49 +1,14 @@
 {
   "nodes": [
     {
-      "title": "End",
-      "color": "#5c2e2e",
-      "x": 750.0,
-      "y": 0.0,
-      "description": "Exit point of the pipeline.  The last node wires into its Path In.",
+      "title": "print",
+      "color": "#5a5a5a",
+      "x": 581.6497471285795,
+      "y": -762.1822067049518,
+      "description": "Print a value to stdout.  Captured by the run panel.",
       "dynamic": false,
       "metadata": {
-        "template": "End",
-        "id": "end"
-      },
-      "sections": [
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Set Device",
-      "color": "#2721cf",
-      "x": 400.0,
-      "y": 0.0,
-      "description": "Routes a device into the pipeline.",
-      "dynamic": false,
-      "metadata": {
-        "template": "Set Device",
-        "id": "sd"
+        "template": "print"
       },
       "sections": [
         {
@@ -52,135 +17,13 @@
           "collapsed": false,
           "inputs": [
             [
-              "Device",
-              "string",
-              "A CPU or GPU handle",
-              "cpu"
+              "Value",
+              "any",
+              "Value to print",
+              null
             ]
           ],
           "outputs": []
-        },
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Path",
-              "string",
-              "Resolved path"
-            ],
-            [
-              "Connection",
-              "string",
-              "Backend name"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "GPU List",
-      "color": "#085c06",
-      "x": 50.0,
-      "y": -120.0,
-      "description": "Lists available GPUs.  Populated on placement.",
-      "dynamic": true,
-      "metadata": {
-        "template": "GPU List",
-        "id": "gpus"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "GPU0",
-              "string",
-              "First GPU handle"
-            ],
-            [
-              "GPU1",
-              "string",
-              "Second GPU handle"
-            ],
-            [
-              "GPU2",
-              "string",
-              "Third GPU handle"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Import torch",
-      "color": "#e86f0c",
-      "x": -250.0,
-      "y": 0.0,
-      "description": "Imports Torch.  Placing it unlocks the rest of the pipeline.",
-      "dynamic": false,
-      "metadata": {
-        "template": "Import torch",
-        "id": "torch"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Torch",
-              "object",
-              "The imported torch module"
-            ]
-          ]
         },
         {
           "name": "Flow",
@@ -207,15 +50,222 @@
     {
       "title": "Start",
       "color": "#2e5c2e",
-      "x": -500.0,
-      "y": 0.0,
-      "description": "Entry point of the pipeline.  Wires to the first node's Path In through the auto Flow section.",
+      "x": -435.1350802246548,
+      "y": -740.2983861678944,
+      "description": "Entry point of the pipeline.",
       "dynamic": false,
       "metadata": {
-        "template": "Start",
-        "id": "start"
+        "template": "Start"
       },
       "sections": [
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Next",
+              "path",
+              "First node in the chain"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Binary Op",
+      "color": "#6a5a8a",
+      "x": 272.6502011453252,
+      "y": -805.3245957637228,
+      "description": "**A op B.**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Binary Op",
+        "kind": "binop"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "A",
+              "any",
+              "A",
+              "0"
+            ],
+            [
+              "Op",
+              "string",
+              "Operator",
+              "'+'"
+            ],
+            [
+              "B",
+              "any",
+              "B",
+              "0"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "Result"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Int Literal",
+      "color": "#c08a3a",
+      "x": -49.653620329651204,
+      "y": -577.1891647736753,
+      "description": "**Integer.**",
+      "dynamic": true,
+      "metadata": {
+        "template": "Int Literal",
+        "kind": "call"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Value",
+              "int",
+              "Integer",
+              "25"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "int",
+              "Int"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Int Literal",
+      "color": "#c08a3a",
+      "x": -61.35942545170968,
+      "y": -864.9736380275887,
+      "description": "**Integer.**",
+      "dynamic": true,
+      "metadata": {
+        "template": "Int Literal",
+        "kind": "call"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Value",
+              "int",
+              "Integer",
+              "17"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "int",
+              "Int"
+            ]
+          ]
+        },
         {
           "name": "Flow",
           "description": "Execution order (Path to Path)",
@@ -242,21 +292,27 @@
   "edges": [
     {
       "from_node": 2,
-      "from_socket": "GPU0",
-      "to_node": 1,
-      "to_socket": "Device"
+      "from_socket": "Result",
+      "to_node": 0,
+      "to_socket": "Value"
     },
     {
-      "from_node": 1,
+      "from_node": 2,
       "from_socket": "Path Out",
       "to_node": 0,
       "to_socket": "Path In"
     },
     {
-      "from_node": 2,
-      "from_socket": "Path Out",
-      "to_node": 1,
-      "to_socket": "Path In"
+      "from_node": 3,
+      "from_socket": "Result",
+      "to_node": 2,
+      "to_socket": "B"
+    },
+    {
+      "from_node": 4,
+      "from_socket": "Result",
+      "to_node": 2,
+      "to_socket": "A"
     },
     {
       "from_node": 3,
@@ -268,6 +324,12 @@
       "from_node": 4,
       "from_socket": "Path Out",
       "to_node": 3,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 1,
+      "from_socket": "Path Out",
+      "to_node": 4,
       "to_socket": "Path In"
     }
   ]

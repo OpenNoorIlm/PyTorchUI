@@ -1,14 +1,15 @@
 {
   "nodes": [
     {
-      "title": "End",
-      "color": "#5c2e2e",
-      "x": 201.7035781249998,
-      "y": -267.5105059374999,
-      "description": "Exit point of the pipeline.",
-      "dynamic": false,
+      "title": "String Literal",
+      "color": "#c08a3a",
+      "x": -434.0,
+      "y": -230.0,
+      "description": "**String.**  Type text in the Value field.",
+      "dynamic": true,
       "metadata": {
-        "template": "End"
+        "template": "String Literal",
+        "kind": "call"
       },
       "sections": [
         {
@@ -17,9 +18,69 @@
           "collapsed": false,
           "inputs": [
             [
-              "Prev",
+              "Value",
+              "string",
+              "Text",
+              "'Hello, world!'"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "string",
+              "The string"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
               "path",
-              "Last node in the chain",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "print",
+      "color": "#5a5a5a",
+      "x": -141.52356562500012,
+      "y": -273.8398643749998,
+      "description": "Print a value to stdout.  Captured by the run panel.",
+      "dynamic": false,
+      "metadata": {
+        "template": "print"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Value",
+              "any",
+              "Value to print",
               null
             ]
           ],
@@ -94,14 +155,14 @@
       ]
     },
     {
-      "title": "print",
-      "color": "#5a5a5a",
-      "x": -141.52356562500012,
-      "y": -273.8398643749998,
-      "description": "Print a value to stdout.  Captured by the run panel.",
+      "title": "End",
+      "color": "#5c2e2e",
+      "x": 201.7035781249998,
+      "y": -267.5105059374999,
+      "description": "Exit point of the pipeline.",
       "dynamic": false,
       "metadata": {
-        "template": "print"
+        "template": "End"
       },
       "sections": [
         {
@@ -110,74 +171,13 @@
           "collapsed": false,
           "inputs": [
             [
-              "Value",
-              "any",
-              "Value to print",
+              "Prev",
+              "path",
+              "Last node in the chain",
               null
             ]
           ],
           "outputs": []
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "String Literal",
-      "color": "#c08a3a",
-      "x": -434.0,
-      "y": -230.0,
-      "description": "**String.**  Type text in the Value field.",
-      "dynamic": true,
-      "metadata": {
-        "template": "String Literal",
-        "kind": "call"
-      },
-      "sections": [
-        {
-          "name": "Inputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Value",
-              "string",
-              "Text",
-              "'Hello, world!'"
-            ]
-          ],
-          "outputs": []
-        },
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Result",
-              "string",
-              "The string"
-            ]
-          ]
         },
         {
           "name": "Flow",
@@ -204,6 +204,18 @@
   ],
   "edges": [
     {
+      "from_node": 0,
+      "from_socket": "Result",
+      "to_node": 1,
+      "to_socket": "Value"
+    },
+    {
+      "from_node": 0,
+      "from_socket": "Path Out",
+      "to_node": 1,
+      "to_socket": "Path In"
+    },
+    {
       "from_node": 2,
       "from_socket": "Path Out",
       "to_node": 0,
@@ -214,18 +226,6 @@
       "from_socket": "Path Out",
       "to_node": 3,
       "to_socket": "Path In"
-    },
-    {
-      "from_node": 3,
-      "from_socket": "Path Out",
-      "to_node": 2,
-      "to_socket": "Path In"
-    },
-    {
-      "from_node": 3,
-      "from_socket": "Result",
-      "to_node": 2,
-      "to_socket": "Value"
     }
   ]
 }
