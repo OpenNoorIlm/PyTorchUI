@@ -315,7 +315,102 @@ def run_create(py, libs, cap, no_cap, no_torch, quiet, verbose):
     return args
 
 
+# ---------------------------------------------------------------- #
+#  main.db download                                                 #
+# ---------------------------------------------------------------- #
+#
+# If a pre-built database is published as a release asset, fetch it
+# instead of running the walk.  The release binary is a few tens of
+# megabytes; walking every installed library takes minutes.
+#
+# Falls back to the caller's own build path if the download fails.
+
+_DB_URL = 'https://github.com/OpenNoorIlm/PyTorchUI/releases/download/Database/main.db'
+_DB_PATHS = ("data/main.db", "main.db")
+
+
+def _ensure_db(force=False, quiet=False):
+    """Return the path to main.db, downloading it if missing.
+
+    Returns None if no database could be obtained.  Callers should
+    fall back to their own build path in that case.
+    """
+    import urllib.request
+
+    if not force:
+        for p in _DB_PATHS:
+            try:
+                size = os.path.getsize(p)
+            except OSError:
+                continue
+            if size > 4096:
+                if not quiet:
+                    print("  using existing %s (%d bytes)" % (p, size))
+                return p
+
+    target = _DB_PATHS[0]
+    parent = os.path.dirname(os.path.abspath(target))
+    if parent and not os.path.isdir(parent):
+        os.makedirs(parent, exist_ok=True)
+
+    tmp = target + ".part"
+    if not quiet:
+        print("  downloading %s" % _DB_URL)
+        print("  -> %s" % os.path.abspath(target))
+
+    try:
+        req = urllib.request.Request(
+            _DB_URL,
+            headers={"User-Agent": "PyTorchUI-fetch/1.0"})
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            total = int(resp.headers.get("Content-Length") or 0)
+            got = 0
+            with open(tmp, "wb") as out:
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    got += len(chunk)
+                    if not quiet and total:
+                        pct = got * 100 // total
+                        sys.stderr.write(
+                            "\r    %3d%%  %d / %d MB"
+                            % (pct,
+                               got // (1024 * 1024),
+                               total // (1024 * 1024)))
+                        sys.stderr.flush()
+            if not quiet and total:
+                sys.stderr.write("\n")
+    except Exception as ex:
+        try:
+            if os.path.isfile(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        print("  ! download failed: %s" % ex)
+        return None
+
+    if got < 4096:
+        try:
+            os.remove(tmp)
+        except Exception:
+            pass
+        print("  ! downloaded file is only %d bytes; refusing" % got)
+        return None
+
+    os.replace(tmp, target)
+    if not quiet:
+        print("  downloaded %d bytes -> %s" % (got, target))
+    return target
+
 def cmd_build(py, args):
+    if getattr(args, "fetch", False):
+        db = _ensure_db(force=True, quiet=getattr(args, "quiet", False))
+        if db is None:
+            print("! download failed")
+            return 1
+        return 0
     if args.interactive:
         libs = input(f"    {C['MAGENTA']}libraries (comma-sep, blank=none): {C['RESET']}").strip()
         cap = input(f"    {C['MAGENTA']}cap [{args.cap or '2000'}]: {C['RESET']}").strip()
@@ -351,6 +446,8 @@ def cmd_build(py, args):
 
 
 def cmd_run(py, args):
+    # Try the pre-built database first; fall through to build if it fails.
+    _ensure_db()
     db = os.path.join(ROOT, "data", "main.db")
     if not os.path.isfile(db):
         warn("no database; building first")
@@ -474,6 +571,9 @@ def build_parser():
     p.add_argument("--folder", default="")
     p.add_argument("-h", "--help", action="store_true")
     p.add_argument("--version", action="store_true")
+    p.add_argument("--fetch", action="store_true",
+                   help="download main.db from the release URL "
+                        "instead of building it")
     return p
 
 

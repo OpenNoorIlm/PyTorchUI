@@ -98,6 +98,8 @@ class Step:
             return "verify database"
         if self.kind == "build":
             return "build database"
+        if self.kind == "fetch":
+            return "fetch pre-built database"
         return self.kind
 
 
@@ -111,9 +113,13 @@ def _collect_from_args(args):
         args.check is not None,
         args.list,
         args.verify,
+        getattr(args, "fetch", False),
     ])
 
     steps = []
+
+    if getattr(args, "fetch", False):
+        steps.append(Step("fetch"))
 
     if args.install is not None:
         for pkg in args.install:
@@ -321,6 +327,99 @@ def _run_verify(step, args, log_fn):
         return False
 
 
+# ---------------------------------------------------------------- #
+#  main.db download                                                 #
+# ---------------------------------------------------------------- #
+
+_DB_URL = "https://github.com/OpenNoorIlm/PyTorchUI/releases/download/Database/main.db"
+_DB_PATHS = ("data/main.db", "main.db")
+
+
+def _ensure_db(force=False, quiet=False):
+    """Return the path to main.db, downloading it if missing.
+
+    Returns None on failure.  Callers fall back to a build in that
+    case.
+    """
+    import urllib.request
+
+    if not force:
+        for p in _DB_PATHS:
+            try:
+                size = os.path.getsize(p)
+            except OSError:
+                continue
+            if size > 4096:
+                if not quiet:
+                    print("  using existing %s (%d bytes)" % (p, size))
+                return p
+
+    target = _DB_PATHS[0]
+    parent = os.path.dirname(os.path.abspath(target))
+    if parent and not os.path.isdir(parent):
+        os.makedirs(parent, exist_ok=True)
+
+    tmp = target + ".part"
+    if not quiet:
+        print("  downloading %s" % _DB_URL)
+        print("  -> %s" % os.path.abspath(target))
+
+    got = 0
+    try:
+        req = urllib.request.Request(
+            _DB_URL,
+            headers={"User-Agent": "PyTorchUI-fetch/1.0"})
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            total = int(resp.headers.get("Content-Length") or 0)
+            with open(tmp, "wb") as out:
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    got += len(chunk)
+                    if not quiet and total:
+                        pct = got * 100 // total
+                        sys.stderr.write(
+                            "\r    %3d%%  %d / %d MB"
+                            % (pct,
+                               got // (1024 * 1024),
+                               total // (1024 * 1024)))
+                        sys.stderr.flush()
+            if not quiet and total:
+                sys.stderr.write("\n")
+    except Exception as ex:
+        try:
+            if os.path.isfile(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        print("  ! download failed: %s" % ex)
+        return None
+
+    if got < 4096:
+        try:
+            os.remove(tmp)
+        except Exception:
+            pass
+        print("  ! downloaded file is only %d bytes; refusing" % got)
+        return None
+
+    os.replace(tmp, target)
+    if not quiet:
+        print("  downloaded %d bytes -> %s" % (got, target))
+    return target
+
+
+def _run_fetch(step, args, log_fn):
+    """Step runner: download the pre-built database."""
+    db = _ensure_db(force=True, quiet=getattr(args, "quiet", False))
+    if db is None:
+        log_fn("! download failed")
+        return False
+    log_fn("main.db is at %s" % db)
+    return True
+
 def _run_build(step, args, log_fn):
     libs = (args.libs or ",".join(DEFAULT_LIBS)).split(",")
     libs = [l.strip() for l in libs if l.strip()]
@@ -358,6 +457,7 @@ _RUNNERS = {
     "list":       _run_list,
     "verify":     _run_verify,
     "build":      _run_build,
+    "fetch":      _run_fetch,
 }
 
 
@@ -646,6 +746,9 @@ def _parser():
     p.add_argument("--gui", action="store_true")
     p.add_argument("--cli", action="store_true")
     p.add_argument("-q", "--quiet", action="store_true")
+    p.add_argument("--fetch", action="store_true",
+                   help="download main.db from the release URL "
+                        "instead of building it")
     return p
 
 
