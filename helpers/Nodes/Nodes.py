@@ -5639,6 +5639,9 @@ class MainWindow(QMainWindow):
                     lambda checked=False, t=tpl: self._add_template_at_cursor(t))
 
         m = mb.addMenu("Tools")
+        self._act(m, "Library Manager\u2026", None,
+                  self._open_library_manager)
+        m.addSeparator()
         self._act(m, "Convert Python \u2192 PyTorchUI\u2026", None,
                   self._open_convert_dialog_menu)
         self._act(m, "Convert PyTorchUI \u2192 Python\u2026", None,
@@ -5833,6 +5836,23 @@ class MainWindow(QMainWindow):
             self._act_redo.setEnabled(self._undo_mgr.can_redo())
         except Exception:
             pass
+
+
+    def _open_library_manager(self):
+        if LibraryManagerDialog is None:
+            self.report(
+                "LibraryDialogs module not importable",
+                "error", 3000)
+            return
+        # Prefer data/main.db if the repo was tidied; fall back to
+        # the classic main.db.
+        db_path = "main.db"
+        for cand in ("data/main.db", "main.db"):
+            if os.path.isfile(cand):
+                db_path = cand
+                break
+        dlg = LibraryManagerDialog(self, db_path=db_path)
+        dlg.exec_()
 
 
     def _build_status_bar(self):
@@ -11329,6 +11349,15 @@ except ImportError:
     except ImportError:
         PythonToPyUIDialog = None
         PyUIToPythonDialog = None
+
+try:
+    from helpers.Nodes.LibraryDialogs import LibraryManagerDialog
+except ImportError:
+    try:
+        from LibraryDialogs import LibraryManagerDialog
+    except ImportError:
+        LibraryManagerDialog = None
+
 
 _install_nodehost()
 

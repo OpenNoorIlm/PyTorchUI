@@ -344,6 +344,31 @@ def _build_parser():
         help="skip the walk; only re-emit the loader main.py using "
              "metadata already present in main.db / main.json.  Fast.",
     )
+    p.add_argument(
+        "--register-lib", dest="register_lib",
+        action="append", default=[], metavar="LIB",
+        help="walk and register a single library into the DB "
+             "(implies --db, --no-torch).  Safe to run while the "
+             "editor is open thanks to WAL.",
+    )
+    p.add_argument(
+        "--unregister-lib", dest="unregister_lib",
+        action="append", default=[], metavar="LIB",
+        help="delete every node belonging to LIB from the DB.",
+    )
+    p.add_argument(
+        "--check-lib", dest="check_lib",
+        action="append", default=[], metavar="LIB",
+        help="report installed version and DB status for LIB.",
+    )
+    p.add_argument(
+        "--list-libs", dest="list_libs", action="store_true",
+        help="list every library currently registered in the DB.",
+    )
+    p.add_argument(
+        "--no-wal", dest="no_wal", action="store_true",
+        help="disable WAL journal mode (default is on).",
+    )
     return p
 
 
@@ -1361,6 +1386,14 @@ def emit_db(specs, out_file, db_path,
 
     print("  opening %s" % db_path)
     con = sqlite3.connect(db_path)
+    # WAL allows readers while a writer is active — main.py can keep
+    # reading the DB while build.py or create.py writes to it.
+    try:
+        con.execute("PRAGMA journal_mode = WAL")
+        con.execute("PRAGMA synchronous = NORMAL")
+        con.execute("PRAGMA busy_timeout = 5000")
+    except sqlite3.OperationalError:
+        pass
     try:
         con.execute("""
             CREATE TABLE IF NOT EXISTS metadata (
@@ -1617,6 +1650,152 @@ def emit_loader_only(out_file, data_file, data_format,
     return out_file
 
 
+# ============================================================== #
+#  Library management subcommands                                 #
+# ============================================================== #
+
+def _open_db_rw(db_path, use_wal=True):
+    """Open a connection suitable for writing.
+
+    WAL mode lets main.py keep reading while we write, so a build can
+    run alongside the editor without blocking it.
+    """
+    con = sqlite3.connect(db_path)
+    if use_wal:
+        try:
+            con.execute("PRAGMA journal_mode = WAL")
+            con.execute("PRAGMA synchronous = NORMAL")
+            con.execute("PRAGMA busy_timeout = 5000")
+        except sqlite3.OperationalError:
+            pass
+    return con
+
+
+def _lib_installed_version(lib):
+    """Return the pip-installed version of LIB or None."""
+    try:
+        from importlib.metadata import version, PackageNotFoundError
+    except ImportError:
+        return None
+    try:
+        return version(lib)
+    except PackageNotFoundError:
+        return None
+    except Exception:
+        return None
+
+
+def _lib_registered_count(db_path, lib):
+    """Count nodes whose category starts with LIB (case-sensitive)."""
+    if not os.path.isfile(db_path):
+        return 0
+    try:
+        con = _open_db_rw(db_path, use_wal=False)
+    except Exception:
+        return 0
+    try:
+        try:
+            row = con.execute(
+                "SELECT COUNT(*) FROM nodes WHERE "
+                "category = ? OR category LIKE ?",
+                (lib, lib + "/%")).fetchone()
+            return int(row[0]) if row else 0
+        except sqlite3.OperationalError:
+            return 0
+    finally:
+        con.close()
+
+
+def _check_libs(db_path, libs, quiet=False):
+    for lib in libs:
+        ver = _lib_installed_version(lib) or "-"
+        n = _lib_registered_count(db_path, lib)
+        print("%-24s installed=%-12s nodes=%d"
+              % (lib, ver, n))
+
+
+def _list_registered_libs(db_path, quiet=False):
+    if not os.path.isfile(db_path):
+        print("! no database at %s" % db_path)
+        return
+    con = _open_db_rw(db_path, use_wal=False)
+    try:
+        try:
+            rows = con.execute(
+                "SELECT "
+                "  CASE WHEN INSTR(category, '/') > 0 "
+                "    THEN SUBSTR(category, 1, INSTR(category, '/') - 1) "
+                "    ELSE category END AS root, "
+                "  COUNT(*) AS n "
+                "FROM nodes GROUP BY root ORDER BY n DESC"
+            ).fetchall()
+        except sqlite3.OperationalError:
+            print("! no nodes table")
+            return
+        print("%-40s %s" % ("LIBRARY", "NODES"))
+        print("-" * 50)
+        for lib, n in rows:
+            print("%-40s %d" % (lib, n))
+    finally:
+        con.close()
+
+
+def _register_libs(db_path, libs, quiet=False, no_wal=False):
+    """Walk each lib and upsert its nodes into the DB."""
+    import tempfile
+    for lib in libs:
+        if not quiet:
+            print("register: %s" % lib)
+        cat = lib.split(".")[0]
+        specs = collect([(cat, lib)], MAX_DEPTH, PER_PACKAGE_CAP,
+                        quiet, deep_c=False)
+        if not specs:
+            print("  ! no nodes collected from %s" % lib)
+            continue
+        # emit_db writes the loader to out_file; we use a throwaway.
+        fd, tmp_loader = tempfile.mkstemp(
+            suffix=".py", prefix="pytorchui_loader_")
+        os.close(fd)
+        try:
+            emit_db(specs, tmp_loader, db_path,
+                    "n/a (register)", "n/a",
+                    [(cat, lib)])
+        finally:
+            try:
+                os.remove(tmp_loader)
+            except Exception:
+                pass
+        if not quiet:
+            print("  -> %d node(s)" % len(specs))
+
+
+def _unregister_libs(db_path, libs, quiet=False, no_wal=False):
+    if not os.path.isfile(db_path):
+        print("! no database at %s" % db_path)
+        return
+    con = _open_db_rw(db_path, use_wal=not no_wal)
+    try:
+        for lib in libs:
+            cur = con.execute(
+                "DELETE FROM nodes WHERE "
+                "category = ? OR category LIKE ?",
+                (lib, lib + "/%"))
+            if not quiet:
+                print("unregister: %s -> %d row(s)"
+                      % (lib, cur.rowcount))
+        con.commit()
+        # FTS cleanup
+        try:
+            con.execute("INSERT INTO node_search(node_search) "
+                        "VALUES('optimize')")
+            con.commit()
+        except sqlite3.OperationalError:
+            pass
+    finally:
+        con.close()
+
+
+
 def main(argv=None):
     global _DEBUG, _LIST_ONLY
     warnings.filterwarnings("ignore")
@@ -1625,6 +1804,25 @@ def main(argv=None):
 
     _DEBUG     = bool(getattr(args, "debug", False))
     _LIST_ONLY = bool(getattr(args, "list_modules", False))
+
+    # ---- library management subcommands ---- #
+    if getattr(args, "list_libs", False):
+        _list_registered_libs(args.db_path, args.quiet)
+        return
+
+    if getattr(args, "check_lib", None):
+        _check_libs(args.db_path, args.check_lib, args.quiet)
+        return
+
+    if getattr(args, "register_lib", None):
+        _register_libs(args.db_path, args.register_lib,
+                       args.quiet, getattr(args, "no_wal", False))
+        return
+
+    if getattr(args, "unregister_lib", None):
+        _unregister_libs(args.db_path, args.unregister_lib,
+                         args.quiet, getattr(args, "no_wal", False))
+        return
 
     fmt = _resolve_format(args)
 
