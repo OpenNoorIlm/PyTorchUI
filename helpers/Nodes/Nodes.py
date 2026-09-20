@@ -10834,6 +10834,332 @@ def _check_libs(python, libs):
 
 # ---- the dialog --------------------------------------------------- #
 
+# ---------------------------------------------------------------- #
+#  Export graph \u2192 Python                                        #
+# ---------------------------------------------------------------- #
+
+class ExportGraphDialog(QDialog):
+    """Write the current graph as a small Python project folder."""
+
+    def __init__(self, parent=None, default_dir="", code_provider=None,
+                 graph_provider=None):
+        super().__init__(parent)
+        self.setWindowTitle("Convert PyTorchUI \u2192 Python")
+        self.setModal(True)
+        self.resize(640, 500)
+        self._code_provider = code_provider
+        self._graph_provider = graph_provider
+
+        from PyQt5.QtWidgets import QCheckBox, QRadioButton
+
+        v = QVBoxLayout(self)
+        v.setContentsMargins(14, 14, 14, 14)
+        v.setSpacing(8)
+
+        head = QLabel("Export the current graph as Python")
+        head.setStyleSheet(
+            "font-weight:600;color:#F0F0F0;font-size:13px;")
+        v.addWidget(head)
+
+        sub = QLabel(
+            "Writes a self-contained folder with the graph JSON, a "
+            "per-node metadata JSON, generated pipeline.py, a loader "
+            "script, and a README.  The source graph is untouched.")
+        sub.setStyleSheet("color:#8A8A8A;font-size:11px;")
+        sub.setWordWrap(True)
+        v.addWidget(sub)
+
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Folder:"))
+        if not default_dir:
+            default_dir = os.path.join(os.getcwd(), "exported_graph")
+        self.edit_folder = QLineEdit(default_dir)
+        row.addWidget(self.edit_folder, 1)
+        b_browse = QPushButton("Browse\u2026")
+        b_browse.clicked.connect(self._pick_folder)
+        row.addWidget(b_browse)
+        v.addLayout(row)
+
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Name:  "))
+        self.edit_name = QLineEdit("pytorchui_graph")
+        row.addWidget(self.edit_name, 1)
+        v.addLayout(row)
+
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Mode:"))
+        self.rb_folder = QRadioButton("Folder (recommended)")
+        self.rb_file   = QRadioButton("Single .py file")
+        self.rb_folder.setChecked(True)
+        row.addWidget(self.rb_folder)
+        row.addWidget(self.rb_file)
+        row.addStretch(1)
+        v.addLayout(row)
+
+        self.chk_json   = QCheckBox(
+            "Write graph.json + graph.meta.json")
+        self.chk_pipe   = QCheckBox(
+            "Write pipeline.py (annotated)")
+        self.chk_loader = QCheckBox("Write open_graph.py")
+        self.chk_readme = QCheckBox("Write README.md")
+        for c in (self.chk_json, self.chk_pipe,
+                  self.chk_loader, self.chk_readme):
+            c.setChecked(True)
+            v.addWidget(c)
+
+        v.addStretch(1)
+
+        row = QHBoxLayout()
+        row.addStretch(1)
+        b_cancel = QPushButton("Cancel")
+        b_cancel.clicked.connect(self.reject)
+        row.addWidget(b_cancel)
+        b_ok = QPushButton("Export")
+        b_ok.setDefault(True)
+        b_ok.clicked.connect(self._export)
+        row.addWidget(b_ok)
+        v.addLayout(row)
+
+    # ---------- helpers ---------- #
+
+    def _window(self):
+        try:
+            w = self.parent()
+            while w is not None and not hasattr(w, "scene"):
+                w = w.parent()
+            return w
+        except Exception:
+            return None
+
+    def _pick_folder(self):
+        from PyQt5.QtWidgets import QFileDialog
+        start = self.edit_folder.text() or os.path.expanduser("~")
+        path = QFileDialog.getExistingDirectory(
+            self, "Choose output folder", start)
+        if path:
+            self.edit_folder.setText(path)
+
+    def _build_meta(self):
+        """Detailed per-node summary for graph.meta.json."""
+        import datetime as _dt
+        meta = {
+            "format":     "pytorchui-export-meta",
+            "version":    1,
+            "generated":  _dt.datetime.now().isoformat(
+                timespec="seconds"),
+            "node_count": 0,
+            "edge_count": 0,
+            "categories": {},
+            "nodes":      [],
+            "edges":      [],
+        }
+        win = self._window()
+        if win is None:
+            return meta
+        scene = getattr(win, "scene", None)
+        if scene is None:
+            return meta
+
+        nodes = [i for i in scene.items() if isinstance(i, Node)]
+        edges = [i for i in scene.items() if isinstance(i, Edge)]
+        meta["node_count"] = len(nodes)
+        meta["edge_count"] = len(edges)
+
+        cats = {}
+        for n in nodes:
+            c = n.metadata.get("category", "?")
+            cats[c] = cats.get(c, 0) + 1
+        meta["categories"] = cats
+
+        for n in nodes:
+            params = []
+            for inp in n.inputs:
+                if inp.name in ("Path In", "Path Out",
+                                "Next", "Prev"):
+                    continue
+                if inp.connections:
+                    params.append({"name": inp.name,
+                                   "state": "connected"})
+                elif inp.value is not None:
+                    params.append({
+                        "name":  inp.name,
+                        "state": "literal",
+                        "value": str(inp.value),
+                    })
+                else:
+                    params.append({"name": inp.name,
+                                   "state": "empty"})
+            try:
+                nid = _safe_nid(n)
+            except Exception:
+                nid = n.title
+            meta["nodes"].append({
+                "title":    n.title,
+                "template": n.metadata.get("template", ""),
+                "id":       nid,
+                "category": n.metadata.get("category", ""),
+                "x":        round(n.pos().x(), 2),
+                "y":        round(n.pos().y(), 2),
+                "params":   params,
+            })
+
+        for e in edges:
+            if e.start_socket is None or e.end_socket is None:
+                continue
+            meta["edges"].append({
+                "from_node":   e.start_socket.node.title,
+                "from_socket": e.start_socket.name,
+                "to_node":     e.end_socket.node.title,
+                "to_socket":   e.end_socket.name,
+            })
+        return meta
+
+    def _loader_source(self, folder, name):
+        root = os.path.dirname(os.path.abspath(__file__))
+        while not os.path.isfile(os.path.join(root, "main.py")):
+            parent = os.path.dirname(root)
+            if parent == root:
+                break
+            root = parent
+        return (
+            "#!/usr/bin/env python3\n"
+            "\"\"\"open_graph.py \u2014 load the exported graph "
+            "in PyTorchUI.\n\n"
+            "Run with the Python that has PyQt5 installed:\n"
+            "    python open_graph.py\n"
+            "\"\"\"\n"
+            "import os\n"
+            "import sys\n"
+            "\n"
+            "PYTORCHUI_ROOT = %r\n"
+            "if os.path.isdir(PYTORCHUI_ROOT):\n"
+            "    sys.path.insert(0, PYTORCHUI_ROOT)\n"
+            "\n"
+            "from helpers.Nodes.Nodes import API\n"
+            "\n"
+            "HERE = os.path.dirname(os.path.abspath(__file__))\n"
+            "GRAPH = os.path.join(HERE, 'graph.json')\n"
+            "\n"
+            "api = API.instance()\n"
+            "api.load(GRAPH)\n"
+            "api.run()\n"
+        ) % root
+
+    def _readme_source(self, name):
+        return (
+            "# %s\n\n"
+            "Exported from PyTorchUI.\n\n"
+            "## Files\n\n"
+            "- **graph.json** \u2014 the raw node graph.  "
+            "Re-open with File \u2192 Open.  Round-trips "
+            "losslessly.\n"
+            "- **graph.meta.json** \u2014 per-node summary: title, "
+            "template, category, position, and every input's state "
+            "(literal / connected / empty).  Plus every edge and "
+            "category counts.\n"
+            "- **pipeline.py** \u2014 generated Python.  Header "
+            "block summarises the graph; before each node a comment "
+            "block lists the parameters that call uses.  Imports "
+            "`runtime` from PyTorchUI, so it only runs inside the "
+            "editor's run panel.\n"
+            "- **open_graph.py** \u2014 loads graph.json into a "
+            "fresh editor.\n"
+            "- **README.md** \u2014 this file.\n\n"
+            "## Requirements\n\n"
+            "    pip install PyQt5 matplotlib torch\n\n"
+            "## Usage\n\n"
+            "    python open_graph.py\n"
+            "\n"
+            "Then press **F5** in the editor.\n"
+        ) % name
+
+    def _export(self):
+        import json as _j
+        folder = self.edit_folder.text().strip()
+        name = self.edit_name.text().strip() or "pytorchui_graph"
+
+        if not folder:
+            self.edit_folder.setText(os.path.join(
+                os.getcwd(), "exported_graph"))
+            folder = self.edit_folder.text().strip()
+
+        single_file = self.rb_file.isChecked()
+
+        if single_file:
+            from PyQt5.QtWidgets import QFileDialog, QMessageBox
+            default = os.path.join(folder, name + ".py")
+            path, _ = QFileDialog.getSaveFileName(
+                self, "Save Python file", default,
+                "Python source (*.py);;All Files (*)")
+            if not path:
+                return
+            try:
+                code = (self._code_provider()
+                        if self._code_provider else "")
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(code)
+            except Exception as ex:
+                QMessageBox.critical(
+                    self, "Export failed", str(ex))
+                return
+            QMessageBox.information(
+                self, "Exported", "Wrote:\n  %s" % path)
+            self.accept()
+            return
+
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except Exception as ex:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.critical(
+                self, "Export failed",
+                "Could not create %s:\n%s" % (folder, ex))
+            return
+
+        written = []
+
+        if self.chk_json.isChecked() and self._graph_provider:
+            p = os.path.join(folder, "graph.json")
+            with open(p, "w", encoding="utf-8") as f:
+                _j.dump(self._graph_provider(), f, indent=2)
+            written.append(p)
+
+            p2 = os.path.join(folder, "graph.meta.json")
+            try:
+                with open(p2, "w", encoding="utf-8") as f:
+                    _j.dump(self._build_meta(), f, indent=2)
+                written.append(p2)
+            except Exception as ex:
+                print("[export] meta failed:", ex)
+
+        if self.chk_pipe.isChecked() and self._code_provider:
+            p = os.path.join(folder, "pipeline.py")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(self._code_provider())
+            written.append(p)
+
+        if self.chk_loader.isChecked():
+            p = os.path.join(folder, "open_graph.py")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(self._loader_source(folder, name))
+            written.append(p)
+
+        if self.chk_readme.isChecked():
+            p = os.path.join(folder, "README.md")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(self._readme_source(name))
+            written.append(p)
+
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.information(
+            self, "Exported",
+            "Wrote %d file(s) to:\n  %s\n\n%s"
+            % (len(written), folder,
+               "\n".join("  " + os.path.basename(p)
+                          for p in written)))
+        self.accept()
+
+
 class ConvertDialog(QDialog):
     def __init__(self, parent=None, python="python",
                  default_folder="", default_out=""):
