@@ -1305,10 +1305,19 @@ def _unique_var(base, used):
 
 
 def _sorted_children(n):
-    """Return n.blocks sorted by visual (top-to-bottom) position.
+    """Return n.blocks in the order they should be emitted.
 
-    Click order is not meaningful for code emission — the user controls
-    statement order by dragging children up or down on the canvas.
+    Two sources of order:
+
+      * _select_order, set at click time when the user Ctrl+clicks
+        children in a deliberate sequence.  This wins when present.
+      * visual position, top-to-bottom then left-to-right, which is
+        what layout_blocks() produces when children are attached via
+        drag-and-drop.
+
+    So: Ctrl+click in order -> attach to a parent -> code emits in
+    that order.  Or: drag children into the block slot one by one ->
+    code emits top-to-bottom.
     """
     try:
         kids = list(n.blocks)
@@ -1321,6 +1330,16 @@ def _sorted_children(n):
             return kids
     except RuntimeError:
         return kids
+    # If any child has a nonzero _select_order, use it as the key.
+    # Nodes without one fall to the end, ordered by position.
+    if any(getattr(c, "_select_order", 0) for c in kids):
+        return sorted(
+            kids,
+            key=lambda c: (
+                getattr(c, "_select_order", 0) or 10 ** 9,
+                c.pos().y(),
+                c.pos().x(),
+            ))
     return sorted(kids, key=lambda c: (c.pos().y(), c.pos().x()))
 
 
@@ -1912,8 +1931,31 @@ class Node(QGraphicsItem):
     def block_chain(self):
         return [self] + list(self.blocks)
 
+    # Node kinds that open a Python block.  Only these can accept
+    # children in the graph -- everything else would produce an
+    # indented region that does not correspond to any statement.
+    _BLOCK_KINDS = frozenset({
+        "def", "async_def", "class_",
+        "if", "elif_marker", "else_marker",
+        "for", "while", "with",
+        "try", "except_marker", "finally_marker",
+        "match", "case_marker",
+        "do",
+    })
+
+    def _is_block_parent(self):
+        return self.metadata.get("kind", "") in self._BLOCK_KINDS
+
     def add_block(self, child):
         if child is self:
+            return False
+        # Refuse to attach to a node that is not a Python block.
+        if not self._is_block_parent():
+            kind = self.metadata.get("kind", "?")
+            print("[block] '%s' (kind=%s) is not a block-using node; "
+                  "cannot contain children.  Attach to a Define "
+                  "Function, For, If, Class, etc. instead."
+                  % (self.title, kind))
             return False
         walk = self
         while walk is not None:
@@ -4164,6 +4206,39 @@ class NodeView(QGraphicsView):
         menu = QMenu(self)
         menu.setStyleSheet(MENU_STYLE)
         sel = [i for i in self.scene().selectedItems() if isinstance(i, Node)]
+        # Special case: user has multi-selected some nodes and now
+        # right-clicks a different node.  Offer "attach selection
+        # here" without disturbing the selection.
+        if (sel and node not in sel
+                and len(sel) >= 1
+                and node._is_block_parent()):
+            label = ("Attach %d selected node%s here as children"
+                     % (len(sel), "" if len(sel) == 1 else "s"))
+            act_attach_here = menu.addAction(label)
+            menu.addSeparator()
+            chosen = menu.exec_(global_pos)
+            if chosen is act_attach_here:
+                # Preserve click order.
+                ordered = sorted(
+                    sel,
+                    key=lambda n: getattr(n, "_select_order", 0)
+                                   or 10 ** 9)
+                count = 0
+                for c in ordered:
+                    if node.add_block(c):
+                        count += 1
+                node.layout_blocks()
+                self.scene().graph_changed.emit()
+                win = self.window()
+                if hasattr(win, "report"):
+                    win.report(
+                        "Attached %d child%s to '%s'"
+                        % (count,
+                           "" if count == 1 else "ren",
+                           node.title),
+                        "success", 2500)
+            return
+
         if node not in sel:
             self.scene().clearSelection()
             node.setSelected(True)
@@ -8889,6 +8964,19 @@ class MainWindow(QMainWindow):
                 return ["%s# orphan %s" % (pad, kind)]
 
             if kind == "return":
+                # A Return node only makes sense inside a def.  If
+                # it is at module level, emit a comment instead of an
+                # invalid `return` statement, so the file at least
+                # parses and the mistake is visible in the source.
+                if indent == 0:
+                    L.append(
+                        "%s# [orphan Return] The Return node with id "
+                        "%r is not inside a Define Function or Define "
+                        "Async Function.  Drag it into the block slot "
+                        "of the function it belongs to, then regenerate."
+                        % (pad, nid))
+                    L.append("%s%s = None" % (pad, var))
+                    return L
                 _ret_name = "_ret_" + var
                 L.append("%sruntime.begin(%r)" % (pad, nid))
                 L.append("%s_cap = _OutCapture()" % pad)
