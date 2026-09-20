@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
     QHeaderView, QPlainTextEdit, QMessageBox, QAbstractItemView,
     QWidget,
-)
+    QCheckBox,)
 
 
 POPULAR = [
