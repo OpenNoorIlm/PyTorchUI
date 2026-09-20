@@ -305,9 +305,10 @@ ROLES = [
      [("Name", "string", "Name", "'my_func'"),
       ("Args", "string", "Args", "'a, b'")], [], None, None),
     ("Built-ins/Functions", "Call Function", "call_by_name",
-     "**NAME(*args).**",
+     "**NAME(*args, **kwargs).**",
      [("Name", "string", "Name", "'my_func'"),
-      ("Args", "any", "Args", "[]")],
+      ("Args", "any", "Args", "[]"),
+      ("Kwargs", "any", "Kwargs", "{}")],
      [("Result", "any", "Return")], None, None),
     ("Built-ins/Functions", "Return", "return", "**return VALUE.**",
      [("Value", "any", "Value", "None")], [], None, None),
@@ -8078,6 +8079,13 @@ class MainWindow(QMainWindow):
             v = str(s.value).strip()
             if not v:
                 return "''"
+            # Already a quoted string literal: keep as-is so the
+            # value is not repr'd twice.  Users often type
+            # 'square' (with quotes) into a string field.
+            if (len(v) >= 2
+                    and v[0] == v[-1]
+                    and v[0] in ("'", '"')):
+                return v
 
             # Human-friendly forms for the *args and **kwargs sockets
             # produced by create.py.
@@ -8557,6 +8565,7 @@ class MainWindow(QMainWindow):
             if kind == "call_by_name":
                 name_lit = B.get("Name") or "'f'"
                 args_lit = B.get("Args") or "[]"
+                kwargs_lit = B.get("Kwargs") or "{}"
                 raw = str(name_lit).strip()
                 # Determine if the user typed a name (quoted in the
                 # generated code) or wired an expression.
@@ -8568,6 +8577,13 @@ class MainWindow(QMainWindow):
                 else:
                     bare = raw
                     quoted = False
+                # Build the argument expression.  Include **kwargs
+                # when the user supplied any.
+                _kw = str(kwargs_lit).strip()
+                if _kw and _kw not in ("{}", ""):
+                    arg_str = "*(%s), **(%s)" % (args_lit, kwargs_lit)
+                else:
+                    arg_str = "*(%s)" % args_lit
                 if quoted:
                     # Dotted path like math.sqrt: emit directly.
                     if ("." in bare
@@ -8575,15 +8591,15 @@ class MainWindow(QMainWindow):
                                 r"^[A-Za-z_][A-Za-z0-9_]*"
                                 r"(\.[A-Za-z_][A-Za-z0-9_]*)*$",
                                 bare)):
-                        L.append("%s%s = %s(*(%s))"
-                                 % (pad, var, bare, args_lit))
+                        L.append("%s%s = %s(%s)"
+                                 % (pad, var, bare, arg_str))
                     else:
-                        L.append("%s%s = globals()[str(%s)](*(%s))"
-                                 % (pad, var, name_lit, args_lit))
+                        L.append("%s%s = globals()[str(%s)](%s)"
+                                 % (pad, var, name_lit, arg_str))
                 else:
                     # Wired expression: call it directly.
-                    L.append("%s%s = (%s)(*(%s))"
-                             % (pad, var, bare, args_lit))
+                    L.append("%s%s = (%s)(%s)"
+                             % (pad, var, bare, arg_str))
                 return L, miss
             if kind == "return":
                 L.append("%sreturn %s" % (pad, B.get("Value") or "None"))

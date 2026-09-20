@@ -3,15 +3,28 @@
     {
       "title": "End",
       "color": "#5c2e2e",
-      "x": 450.0,
-      "y": 0.0,
-      "description": "Exit point of the pipeline.  The last node wires into its Path In.",
+      "x": 236.0090973106094,
+      "y": -1225.4449431328107,
+      "description": "Exit point of the pipeline.",
       "dynamic": false,
       "metadata": {
-        "template": "End",
-        "id": "end"
+        "template": "End"
       },
       "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Prev",
+              "path",
+              "Last node in the chain",
+              null
+            ]
+          ],
+          "outputs": []
+        },
         {
           "name": "Flow",
           "description": "Execution order (Path to Path)",
@@ -35,15 +48,14 @@
       ]
     },
     {
-      "title": "nn.Linear",
-      "color": "#6b4a8a",
-      "x": 100.0,
-      "y": -40.0,
-      "description": "Fully connected layer.",
+      "title": "print",
+      "color": "#5a5a5a",
+      "x": -66.93814229671008,
+      "y": -1235.6869316604605,
+      "description": "Print a value to stdout.  Captured by the run panel.",
       "dynamic": false,
       "metadata": {
-        "template": "nn.Linear",
-        "id": "l1"
+        "template": "print"
       },
       "sections": [
         {
@@ -52,16 +64,64 @@
           "collapsed": false,
           "inputs": [
             [
-              "in_features",
-              "int",
-              "Input features",
-              "128"
+              "Value",
+              "any",
+              "Value to print",
+              null
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Call Function",
+      "color": "#6a5a8a",
+      "x": -374.8266921585974,
+      "y": -1279.0806198960286,
+      "description": "**NAME(*args).**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Call Function",
+        "kind": "call_by_name"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Name",
+              "'square'"
             ],
             [
-              "out_features",
-              "int",
-              "Output features",
-              "10"
+              "Args",
+              "any",
+              "Args",
+              "['7']"
             ]
           ],
           "outputs": []
@@ -73,9 +133,9 @@
           "inputs": [],
           "outputs": [
             [
-              "Module",
-              "object",
-              "The Linear module"
+              "Result",
+              "any",
+              "Return"
             ]
           ]
         },
@@ -102,62 +162,15 @@
       ]
     },
     {
-      "title": "nn.Flatten",
-      "color": "#7a7a3a",
-      "x": 100.0,
-      "y": -260.0,
-      "description": "Flatten into a vector.",
+      "title": "Return",
+      "color": "#6a5a8a",
+      "x": -683.1266666613636,
+      "y": -788.2259327107174,
+      "description": "**return VALUE.**",
       "dynamic": false,
       "metadata": {
-        "template": "nn.Flatten",
-        "id": "f1"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Module",
-              "object",
-              "The Flatten module"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "nn.MaxPool2d",
-      "color": "#5c7a4a",
-      "x": -250.0,
-      "y": 160.0,
-      "description": "2D max pooling.",
-      "dynamic": false,
-      "metadata": {
-        "template": "nn.MaxPool2d",
-        "id": "p1"
+        "template": "Return",
+        "kind": "return"
       },
       "sections": [
         {
@@ -166,10 +179,70 @@
           "collapsed": false,
           "inputs": [
             [
-              "kernel_size",
-              "int",
-              "Pool size",
-              "2"
+              "Value",
+              "any",
+              "Value",
+              "None"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Binary Op",
+      "color": "#6a5a8a",
+      "x": -683.1266666613636,
+      "y": -1040.2259327107174,
+      "description": "**A op B.**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Binary Op",
+        "kind": "binop"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "A",
+              "any",
+              "A",
+              "n"
+            ],
+            [
+              "Op",
+              "string",
+              "Operator",
+              "'*'"
+            ],
+            [
+              "B",
+              "any",
+              "B",
+              "n"
             ]
           ],
           "outputs": []
@@ -181,176 +254,9 @@
           "inputs": [],
           "outputs": [
             [
-              "Module",
-              "object",
-              "The MaxPool2d module"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "nn.ReLU",
-      "color": "#4a8a6b",
-      "x": -250.0,
-      "y": -40.0,
-      "description": "ReLU activation.",
-      "dynamic": false,
-      "metadata": {
-        "template": "nn.ReLU",
-        "id": "r1"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Module",
-              "object",
-              "The ReLU module"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "nn.Conv2d",
-      "color": "#8a4a4a",
-      "x": -250.0,
-      "y": -260.0,
-      "description": "2D convolution layer.",
-      "dynamic": false,
-      "metadata": {
-        "template": "nn.Conv2d",
-        "id": "c1"
-      },
-      "sections": [
-        {
-          "name": "Inputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [
-            [
-              "in_channels",
-              "int",
-              "Input channels",
-              "3"
-            ],
-            [
-              "out_channels",
-              "int",
-              "Output channels",
-              "32"
-            ],
-            [
-              "kernel_size",
-              "int",
-              "Kernel size",
-              "3"
-            ]
-          ],
-          "outputs": []
-        },
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Module",
-              "object",
-              "The Conv2d module"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Import torch",
-      "color": "#e86f0c",
-      "x": -550.0,
-      "y": 0.0,
-      "description": "Imports Torch.  Placing it unlocks the rest of the pipeline.",
-      "dynamic": false,
-      "metadata": {
-        "template": "Import torch",
-        "id": "torch"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Torch",
-              "object",
-              "The imported torch module"
+              "Result",
+              "any",
+              "Result"
             ]
           ]
         },
@@ -379,15 +285,81 @@
     {
       "title": "Start",
       "color": "#2e5c2e",
-      "x": -800.0,
-      "y": 0.0,
-      "description": "Entry point of the pipeline.  Wires to the first node's Path In through the auto Flow section.",
+      "x": -980.4516453593509,
+      "y": -1229.0386233179513,
+      "description": "Entry point of the pipeline.",
       "dynamic": false,
       "metadata": {
-        "template": "Start",
-        "id": "start"
+        "template": "Start"
       },
       "sections": [
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Next",
+              "path",
+              "First node in the chain"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Define Function",
+      "color": "#6a5a8a",
+      "x": -699.1266666613636,
+      "y": -1242.2259327107174,
+      "description": "**def NAME(args):** body via blocks.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Define Function",
+        "kind": "def"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Name",
+              "'square'"
+            ],
+            [
+              "Args",
+              "string",
+              "Args",
+              "'n'"
+            ]
+          ],
+          "outputs": []
+        },
         {
           "name": "Flow",
           "description": "Execution order (Path to Path)",
@@ -420,12 +392,18 @@
     },
     {
       "from_node": 2,
+      "from_socket": "Result",
+      "to_node": 1,
+      "to_socket": "Value"
+    },
+    {
+      "from_node": 2,
       "from_socket": "Path Out",
       "to_node": 1,
       "to_socket": "Path In"
     },
     {
-      "from_node": 3,
+      "from_node": 6,
       "from_socket": "Path Out",
       "to_node": 2,
       "to_socket": "Path In"
@@ -437,19 +415,19 @@
       "to_socket": "Path In"
     },
     {
-      "from_node": 5,
+      "from_node": 6,
       "from_socket": "Path Out",
       "to_node": 4,
       "to_socket": "Path In"
     },
     {
-      "from_node": 6,
-      "from_socket": "Path Out",
-      "to_node": 5,
-      "to_socket": "Path In"
+      "from_node": 4,
+      "from_socket": "Result",
+      "to_node": 3,
+      "to_socket": "Value"
     },
     {
-      "from_node": 7,
+      "from_node": 5,
       "from_socket": "Path Out",
       "to_node": 6,
       "to_socket": "Path In"
