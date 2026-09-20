@@ -3,9 +3,6 @@
 # Usage (PowerShell):
 #   irm https://raw.githubusercontent.com/OpenNoorIlm/PyTorchUI/main/install.ps1 | iex
 #
-# Or with arguments:
-#   & ([scriptblock]::Create((irm '...'))) -Dir "$env:USERPROFILE\PyTorchUI"
-#
 # Or locally:
 #   powershell -ExecutionPolicy Bypass -File install.ps1
 
@@ -29,69 +26,49 @@ if (-not $Dir) {
     $Dir = Join-Path $env:USERPROFILE "PyTorchUI"
 }
 
-function Write-Step($msg) {
-    if (-not $Quiet) { Write-Host "==> $msg" -ForegroundColor Cyan }
-}
-function Write-Info($msg) {
-    if (-not $Quiet) { Write-Host "    $msg" }
-}
-function Write-Ok($msg) {
-    if (-not $Quiet) { Write-Host "    * $msg" -ForegroundColor Green }
-}
-function Write-Warn($msg) {
-    Write-Host "    ! $msg" -ForegroundColor Yellow
-}
-function Write-Fail($msg) {
-    Write-Host "    x $msg" -ForegroundColor Red
-    exit 1
-}
-
-# ---------------- Windows check ---------------- #
+function Write-Step($m) { if (-not $Quiet) { Write-Host "==> $m" -ForegroundColor Cyan } }
+function Write-Info($m) { if (-not $Quiet) { Write-Host "    $m" } }
+function Write-Ok($m)   { if (-not $Quiet) { Write-Host "    * $m" -ForegroundColor Green } }
+function Write-Warn($m) { Write-Host "    ! $m" -ForegroundColor Yellow }
+function Write-Fail($m) { Write-Host "    x $m" -ForegroundColor Red; exit 1 }
 
 if ($PSVersionTable.PSEdition -eq "Core") {
-    $isWindowsHere = $IsWindows
+    $isWin = $IsWindows
 } else {
-    $isWindowsHere = $true
+    $isWin = $true
 }
-if (-not $isWindowsHere) {
+if (-not $isWin) {
     Write-Warn "This script is for Windows.  Use install.sh on Linux/macOS."
     exit 1
 }
-
-# ---------------- Python detection ---------------- #
-
-Write-Step "Looking for Python 3.9+"
 
 function Test-Python($exe) {
     try {
         $out = & $exe -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>$null
         if ($LASTEXITCODE -ne 0) { return $null }
-        $parts = $out.Split(".") | ForEach-Object { [int]$_ }
-        if ($parts[0] -lt 3) { return $null }
-        if ($parts[0] -eq 3 -and $parts[1] -lt 9) { return $null }
+        $p = $out.Split(".") | ForEach-Object { [int]$_ }
+        if ($p[0] -lt 3) { return $null }
+        if ($p[0] -eq 3 -and $p[1] -lt 9) { return $null }
         return $out
-    } catch {
-        return $null
-    }
+    } catch { return $null }
 }
 
+Write-Step "Looking for Python 3.9+"
 $PythonExe = $null
 $PythonVer = $null
 
-# Try the py launcher first — it can pick the newest 3.x.
-$pyLauncher = Get-Command "py" -ErrorAction SilentlyContinue
-if ($pyLauncher) {
+$py = Get-Command "py" -ErrorAction SilentlyContinue
+if ($py) {
     try {
         $out = & py -3 -c "import sys; print(sys.executable)"
         if ($LASTEXITCODE -eq 0) {
-            $candidate = $out.Trim()
-            $v = Test-Python $candidate
-            if ($v) { $PythonExe = $candidate; $PythonVer = $v }
+            $cand = $out.Trim()
+            $v = Test-Python $cand
+            if ($v) { $PythonExe = $cand; $PythonVer = $v }
         }
     } catch { }
 }
 
-# Fall back to python.exe / python3.exe on PATH.
 if (-not $PythonExe) {
     foreach ($cmd in @("python", "python3")) {
         $c = Get-Command $cmd -ErrorAction SilentlyContinue
@@ -103,36 +80,19 @@ if (-not $PythonExe) {
 }
 
 if (-not $PythonExe) {
-    Write-Fail @"
-No Python 3.9 or newer found.
-
-Install one of:
-  * Microsoft Store:  https://apps.microsoft.com/detail/9pjpw5ldxlz5
-  * python.org:       https://www.python.org/downloads/windows/
-  * winget:           winget install Python.Python.3.12
-
-During the python.org installer, tick "Add Python to PATH".
-"@
+    Write-Fail "No Python 3.9 or newer found.  Install with winget:
+    winget install Python.Python.3.12
+    Or download:  https://www.python.org/downloads/windows/"
 }
-
 Write-Info "Found: $PythonExe  ($PythonVer)"
 
-# ---------------- Git ---------------- #
-
 Write-Step "Checking for git"
-$gitCmd = Get-Command "git" -ErrorAction SilentlyContinue
-if (-not $gitCmd) {
-    Write-Fail @"
-git is not installed.
-
-Install with one of:
-  * winget:  winget install Git.Git
-  * Git for Windows:  https://git-scm.com/download/win
-"@
+if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
+    Write-Fail "git is not installed.  Install with winget:
+    winget install Git.Git
+    Or download:  https://git-scm.com/download/win"
 }
 Write-Info "git: $(& git --version)"
-
-# ---------------- Install directory ---------------- #
 
 Write-Step "Install directory: $Dir"
 
@@ -142,8 +102,8 @@ if (Test-Path $Dir) {
         $existing = $true
         Write-Info "Existing checkout found.  Will update in place."
     } else {
-        $contents = Get-ChildItem -Path $Dir -Force -ErrorAction SilentlyContinue
-        if ($contents.Count -eq 0) {
+        $c = Get-ChildItem -Path $Dir -Force -ErrorAction SilentlyContinue
+        if ($c.Count -eq 0) {
             Write-Info "Directory exists and is empty."
         } else {
             Write-Fail "Directory exists and is not empty:
@@ -152,8 +112,6 @@ if (Test-Path $Dir) {
         }
     }
 }
-
-# ---------------- Clone or update ---------------- #
 
 if ($existing) {
     Write-Step "Updating existing checkout"
@@ -166,9 +124,7 @@ if ($existing) {
         & git pull --ff-only origin $Branch
         if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
         Write-Ok "Updated $Dir"
-    } finally {
-        Pop-Location
-    }
+    } finally { Pop-Location }
 } else {
     Write-Step "Cloning $RepoUrl"
     & git clone --branch $Branch --depth 1 $RepoUrl $Dir
@@ -178,17 +134,13 @@ if ($existing) {
 
 Set-Location $Dir
 
-# ---------------- Virtualenv ---------------- #
-
 $PyExec = $PythonExe
 
 if (-not $NoVenv) {
     Write-Step "Creating virtual environment"
     if (-not (Test-Path ".venv")) {
         & $PythonExe -m venv .venv
-        if ($LASTEXITCODE -ne 0) {
-            Write-Fail "venv creation failed"
-        }
+        if ($LASTEXITCODE -ne 0) { Write-Fail "venv creation failed" }
         Write-Ok "Created .venv"
     } else {
         Write-Info ".venv already exists"
@@ -200,11 +152,8 @@ if (-not $NoVenv) {
     Write-Info "Using $PyExec"
 }
 
-# Record choice so start.py finds it.
 [System.IO.File]::WriteAllText(
     (Join-Path $Dir ".pytorchui_python"), $PyExec)
-
-# ---------------- Dependencies ---------------- #
 
 Write-Step "Installing dependencies"
 & $PyExec -m pip install --upgrade pip 2>$null | Out-Null
@@ -219,15 +168,12 @@ if (Test-Path "requirements.txt") {
     if ($LASTEXITCODE -ne 0) { Write-Fail "pip install failed" }
 }
 
-# Confirm PyQt5 imports.
 $null = & $PyExec -c "import PyQt5" 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "PyQt5 is not importable in the chosen Python.
     Try:  $PyExec -m pip install PyQt5"
 }
 Write-Ok "PyQt5 imports OK"
-
-# ---------------- Build ---------------- #
 
 if (-not $NoBuild) {
     Write-Step "Building the node database"
@@ -245,24 +191,19 @@ if (-not $NoBuild) {
     if ((Test-Path "main.db") -or (Test-Path "data\main.db")) {
         Write-Ok "Database built"
     } else {
-        Write-Warn "No database file found — the editor starts with an empty library."
+        Write-Warn "No database file found — the editor starts empty."
     }
 }
 
-# ---------------- Done ---------------- #
-
 Write-Host ""
-Write-Host "Installed" -ForegroundColor Green -NoNewline
-Write-Host "  ($Dir)"
+Write-Host "Installed" -ForegroundColor Green
 Write-Host ""
+Write-Host "  Directory:    $Dir"
 Write-Host "  Interpreter:  $PyExec"
 Write-Host ""
 Write-Host "  To launch:"
 Write-Host "      cd $Dir"
 Write-Host "      .\start.bat"
-Write-Host ""
-Write-Host "  Or in PowerShell:"
-Write-Host "      & '$Dir\start.ps1'"
 Write-Host ""
 
 if ($Launch) {

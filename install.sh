@@ -5,7 +5,7 @@
 # Usage:
 #   curl -sSL https://raw.githubusercontent.com/OpenNoorIlm/PyTorchUI/main/install.sh | bash
 #   curl -sSL ... | bash -s -- --dir ~/my-pytorchui
-#   bash install.sh              (local)
+#   bash install.sh
 #
 set -eu
 
@@ -17,8 +17,6 @@ DO_VENV=1
 DO_BUILD=1
 DO_LAUNCH=0
 QUIET=0
-
-# ---------------- arg parsing ---------------- #
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -49,8 +47,6 @@ HELP_EOF
     esac
 done
 
-# ---------------- output helpers ---------------- #
-
 if [ -t 1 ] && command -v tput >/dev/null 2>&1; then
     BOLD=$(tput bold); DIM=$(tput dim); RESET=$(tput sgr0)
     RED=$(tput setaf 1); GREEN=$(tput setaf 2); YELLOW=$(tput setaf 3)
@@ -65,41 +61,11 @@ ok()    { [ "$QUIET" -eq 1 ] || printf "    %s*%s %s\n" "$GREEN" "$RESET" "$*"; 
 warn()  { printf "    %s!%s %s\n" "$YELLOW" "$RESET" "$*" >&2; }
 fail()  { printf "    %sx%s %s\n" "$RED" "$RESET" "$*" >&2; exit 1; }
 
-# ---------------- TTY detection ---------------- #
-# When piped from curl, stdin is the script itself.  Prompts need /dev/tty.
-
 if [ -r /dev/tty ] && [ -w /dev/tty ]; then
     HAS_TTY=1
 else
     HAS_TTY=0
 fi
-
-ask() {
-    local prompt="$1" default="$2" reply
-    if [ "$HAS_TTY" -eq 1 ]; then
-        printf "%s [%s]: " "$prompt" "$default" > /dev/tty
-        read -r reply < /dev/tty || reply=""
-        printf "%s" "${reply:-$default}"
-    else
-        printf "%s" "$default"
-    fi
-}
-
-confirm() {
-    local prompt="$1" default="$2" reply
-    if [ "$HAS_TTY" -eq 0 ]; then
-        return 0
-    fi
-    printf "%s [%s]: " "$prompt" "$default" > /dev/tty
-    read -r reply < /dev/tty || reply=""
-    reply="${reply:-$default}"
-    case "$reply" in
-        y|Y|yes|YES) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-# ---------------- OS detection ---------------- #
 
 step "Detecting platform"
 UNAME="$(uname -s 2>/dev/null || echo unknown)"
@@ -109,8 +75,6 @@ case "$UNAME" in
     *)        fail "Unsupported OS: $UNAME.  Use install.ps1 on Windows." ;;
 esac
 info "OS: $OS"
-
-# ---------------- Python detection ---------------- #
 
 step "Looking for Python 3.9+"
 PYTHON_BIN=""
@@ -131,8 +95,6 @@ if [ -z "$PYTHON_BIN" ]; then
 fi
 info "Found: $PYTHON_BIN  ($($PYTHON_BIN --version 2>&1))"
 
-# ---------------- Git ---------------- #
-
 step "Checking for git"
 if ! command -v git >/dev/null 2>&1; then
     fail "git is not installed.
@@ -140,8 +102,6 @@ if ! command -v git >/dev/null 2>&1; then
     macOS:  xcode-select --install   (or: brew install git)"
 fi
 info "git: $(git --version)"
-
-# ---------------- Install directory ---------------- #
 
 if [ -z "$INSTALL_DIR" ]; then
     INSTALL_DIR="$DEFAULT_DIR"
@@ -165,8 +125,6 @@ else
     EXISTING=0
 fi
 
-# ---------------- Clone or update ---------------- #
-
 if [ "$EXISTING" -eq 1 ]; then
     step "Updating existing checkout"
     ( cd "$INSTALL_DIR" && git fetch origin "$BRANCH" && git checkout "$BRANCH" && git pull --ff-only origin "$BRANCH" ) \
@@ -180,8 +138,6 @@ else
 fi
 
 cd "$INSTALL_DIR"
-
-# ---------------- Virtualenv ---------------- #
 
 PYEXEC="$PYTHON_BIN"
 
@@ -201,10 +157,7 @@ if [ "$DO_VENV" -eq 1 ]; then
     info "Using $PYEXEC"
 fi
 
-# Record the interpreter choice so start.sh / start.py find it later.
 printf "%s" "$PYEXEC" > .pytorchui_python
-
-# ---------------- Dependencies ---------------- #
 
 step "Installing dependencies"
 "$PYEXEC" -m pip install --upgrade pip >/dev/null 2>&1 || true
@@ -217,19 +170,15 @@ else
     "$PYEXEC" -m pip install PyQt5 matplotlib || fail "pip install failed"
 fi
 
-# Verify PyQt5 imports before continuing.
 if ! "$PYEXEC" -c "import PyQt5" 2>/dev/null; then
     fail "PyQt5 is not importable in the chosen Python.
     Try:  $PYEXEC -m pip install PyQt5"
 fi
 ok "PyQt5 imports OK"
 
-# ---------------- Build the node database ---------------- #
-
 if [ "$DO_BUILD" -eq 1 ]; then
     step "Building the node database"
     info "This walks every installed library and takes a few minutes."
-    info "You can skip it now and run 'python build.py' later."
     if [ -f build.py ]; then
         "$PYEXEC" build.py -q || warn "build.py exited non-zero — you can retry with 'python build.py'"
     elif [ -f create.py ]; then
@@ -244,8 +193,6 @@ if [ "$DO_BUILD" -eq 1 ]; then
     fi
 fi
 
-# ---------------- Post-install ---------------- #
-
 step "Installing shell wrappers"
 chmod +x start.sh 2>/dev/null || true
 chmod +x build.py 2>/dev/null || true
@@ -253,32 +200,25 @@ chmod +x create.py 2>/dev/null || true
 chmod +x start.py 2>/dev/null || true
 ok "Wrappers marked executable"
 
-# Optional: pyautogui needs input group on Linux.
 if [ "$OS" = "linux" ]; then
     if [ -f requirements.txt ] && grep -qi pyautogui requirements.txt; then
         if ! id -nG 2>/dev/null | tr ' ' '\n' | grep -qx input; then
             warn "Not a member of the 'input' group."
-            info "For pyautogui key capture, run:  sudo usermod -a -G input \$USER"
+            info "For pyautogui key capture:  sudo usermod -a -G input \$USER"
             info "Then log out and back in.  The editor works without this."
         fi
     fi
 fi
-
-# ---------------- Done ---------------- #
 
 printf "\n"
 printf "%s%sInstalled%s\n" "$BOLD" "$GREEN" "$RESET"
 printf "\n"
 printf "  Directory:    %s\n" "$INSTALL_DIR"
 printf "  Interpreter:  %s\n" "$PYEXEC"
-printf "  Database:     %s\n" "$([ -f data/main.db ] && echo data/main.db || echo "not built")"
 printf "\n"
 printf "  To launch:\n"
 printf "      cd %s\n" "$INSTALL_DIR"
 printf "      ./start.sh\n"
-printf "\n"
-printf "  Or from anywhere:\n"
-printf "      %s/start.sh\n" "$INSTALL_DIR"
 printf "\n"
 
 if [ "$DO_LAUNCH" -eq 1 ]; then
