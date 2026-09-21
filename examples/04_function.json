@@ -1,109 +1,15 @@
 {
   "nodes": [
     {
-      "title": "End",
-      "color": "#5c2e2e",
-      "x": 236.0090973106094,
-      "y": -1225.4449431328107,
-      "description": "Exit point of the pipeline.",
-      "dynamic": false,
-      "metadata": {
-        "template": "End"
-      },
-      "sections": [
-        {
-          "name": "Inputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Prev",
-              "path",
-              "Last node in the chain",
-              null
-            ]
-          ],
-          "outputs": []
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "print",
-      "color": "#5a5a5a",
-      "x": -66.93814229671008,
-      "y": -1235.6869316604605,
-      "description": "Print a value to stdout.  Captured by the run panel.",
-      "dynamic": false,
-      "metadata": {
-        "template": "print"
-      },
-      "sections": [
-        {
-          "name": "Inputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Value",
-              "any",
-              "Value to print",
-              null
-            ]
-          ],
-          "outputs": []
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Call Function",
+      "title": "Define Function",
       "color": "#6a5a8a",
-      "x": -374.8266921585974,
-      "y": -1279.0806198960286,
-      "description": "**NAME(*args).**",
+      "x": -699.1266666613636,
+      "y": -1242.2259327107174,
+      "description": "**def NAME(args):** body via blocks.",
       "dynamic": false,
       "metadata": {
-        "template": "Call Function",
-        "kind": "call_by_name"
+        "template": "Define Function",
+        "kind": "def"
       },
       "sections": [
         {
@@ -119,25 +25,12 @@
             ],
             [
               "Args",
-              "any",
+              "string",
               "Args",
-              "['7']"
+              "'n'"
             ]
           ],
           "outputs": []
-        },
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Result",
-              "any",
-              "Return"
-            ]
-          ]
         },
         {
           "name": "Flow",
@@ -162,30 +55,28 @@
       ]
     },
     {
-      "title": "Return",
-      "color": "#6a5a8a",
-      "x": -683.1266666613636,
-      "y": -788.2259327107174,
-      "description": "**return VALUE.**",
+      "title": "Start",
+      "color": "#2e5c2e",
+      "x": -980.4516453593509,
+      "y": -1229.0386233179513,
+      "description": "Entry point of the pipeline.",
       "dynamic": false,
       "metadata": {
-        "template": "Return",
-        "kind": "return"
+        "template": "Start"
       },
       "sections": [
         {
-          "name": "Inputs",
+          "name": "Outputs",
           "description": "",
           "collapsed": false,
-          "inputs": [
+          "inputs": [],
+          "outputs": [
             [
-              "Value",
-              "any",
-              "Value",
-              "None"
+              "Next",
+              "path",
+              "First node in the chain"
             ]
-          ],
-          "outputs": []
+          ]
         },
         {
           "name": "Flow",
@@ -280,19 +171,90 @@
             ]
           ]
         }
-      ]
+      ],
+      "_parent_index": 0
     },
     {
-      "title": "Start",
-      "color": "#2e5c2e",
-      "x": -980.4516453593509,
-      "y": -1229.0386233179513,
-      "description": "Entry point of the pipeline.",
+      "title": "Return",
+      "color": "#6a5a8a",
+      "x": -683.1266666613636,
+      "y": -788.2259327107174,
+      "description": "**return VALUE.**",
       "dynamic": false,
       "metadata": {
-        "template": "Start"
+        "template": "Return",
+        "kind": "return"
       },
       "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Value",
+              "any",
+              "Value",
+              "None"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Call Function",
+      "color": "#6a5a8a",
+      "x": -374.8266921585974,
+      "y": -1279.0806198960286,
+      "description": "**NAME(*args).**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Call Function",
+        "kind": "call_by_name"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Name",
+              "'square'"
+            ],
+            [
+              "Args",
+              "any",
+              "Args",
+              "[7]"
+            ]
+          ],
+          "outputs": []
+        },
         {
           "name": "Outputs",
           "description": "",
@@ -300,9 +262,9 @@
           "inputs": [],
           "outputs": [
             [
-              "Next",
-              "path",
-              "First node in the chain"
+              "Result",
+              "any",
+              "Return"
             ]
           ]
         },
@@ -329,15 +291,14 @@
       ]
     },
     {
-      "title": "Define Function",
-      "color": "#6a5a8a",
-      "x": -699.1266666613636,
-      "y": -1242.2259327107174,
-      "description": "**def NAME(args):** body via blocks.",
+      "title": "print",
+      "color": "#5a5a5a",
+      "x": -66.93814229671008,
+      "y": -1235.6869316604605,
+      "description": "Print a value to stdout.  Captured by the run panel.",
       "dynamic": false,
       "metadata": {
-        "template": "Define Function",
-        "kind": "def"
+        "template": "print"
       },
       "sections": [
         {
@@ -346,16 +307,57 @@
           "collapsed": false,
           "inputs": [
             [
-              "Name",
-              "string",
-              "Name",
-              "'square'"
-            ],
+              "Value",
+              "any",
+              "Value to print",
+              null
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
             [
-              "Args",
-              "string",
-              "Args",
-              "'n'"
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "End",
+      "color": "#5c2e2e",
+      "x": 236.0090973106094,
+      "y": -1225.4449431328107,
+      "description": "Exit point of the pipeline.",
+      "dynamic": false,
+      "metadata": {
+        "template": "End"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Prev",
+              "path",
+              "Last node in the chain",
+              null
             ]
           ],
           "outputs": []
@@ -385,6 +387,12 @@
   ],
   "edges": [
     {
+      "from_node": 0,
+      "from_socket": "Path Out",
+      "to_node": 4,
+      "to_socket": "Path In"
+    },
+    {
       "from_node": 1,
       "from_socket": "Path Out",
       "to_node": 0,
@@ -393,37 +401,31 @@
     {
       "from_node": 2,
       "from_socket": "Result",
-      "to_node": 1,
+      "to_node": 3,
       "to_socket": "Value"
     },
     {
-      "from_node": 2,
-      "from_socket": "Path Out",
-      "to_node": 1,
-      "to_socket": "Path In"
-    },
-    {
-      "from_node": 6,
+      "from_node": 0,
       "from_socket": "Path Out",
       "to_node": 2,
       "to_socket": "Path In"
     },
     {
-      "from_node": 4,
+      "from_node": 2,
       "from_socket": "Path Out",
       "to_node": 3,
       "to_socket": "Path In"
     },
     {
-      "from_node": 6,
+      "from_node": 4,
       "from_socket": "Path Out",
-      "to_node": 4,
+      "to_node": 5,
       "to_socket": "Path In"
     },
     {
       "from_node": 4,
       "from_socket": "Result",
-      "to_node": 3,
+      "to_node": 5,
       "to_socket": "Value"
     },
     {

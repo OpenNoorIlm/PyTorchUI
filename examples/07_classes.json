@@ -1,0 +1,1123 @@
+{
+  "nodes": [
+    {
+      "title": "Define Class",
+      "color": "#6a5a8a",
+      "x": -318.4975102824232,
+      "y": -412.50823061940235,
+      "description": "**class NAME(bases):** body via blocks.\n\n**Bases** is a comma-separated list of parent classes, or an\nempty string for none:\n\n- no bases:      `''` (or leave blank)\n- one base:      `'QWidget'`\n- several:       `'QWidget, QObject'`\n- module path:   `'PyQt5.QtWidgets.QWidget'`\n\nExample: `Name=\"MyWindow\"`, `Bases=\"'QMainWindow'\"`\nemits `class MyWindow(QMainWindow):`.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Define Class",
+        "kind": "class_",
+        "id": "n35"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Class name",
+              "Point"
+            ],
+            [
+              "Bases",
+              "string",
+              "Parent classes (empty for none)",
+              null
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_blocks_order": [
+        "n27",
+        "n24",
+        "n26",
+        "n34",
+        "n32",
+        "n32",
+        "n32",
+        "n33"
+      ]
+    },
+    {
+      "title": "Define Function",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": 309.49176938059765,
+      "description": "**def NAME(args):** body via blocks.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Define Function",
+        "kind": "def",
+        "id": "n34"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Name",
+              "'dist'"
+            ],
+            [
+              "Args",
+              "string",
+              "Args",
+              "self"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Return",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": 1253.4917693805976,
+      "description": "**return VALUE.**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Return",
+        "kind": "return",
+        "id": "n33"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Value",
+              "any",
+              "Value",
+              "None"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Binary Op",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": 1001.4917693805976,
+      "description": "**A op B.**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Binary Op",
+        "kind": "binop",
+        "id": "n32"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "A",
+              "any",
+              "A",
+              "0"
+            ],
+            [
+              "Op",
+              "string",
+              "Operator",
+              "'+'"
+            ],
+            [
+              "B",
+              "any",
+              "B",
+              "0"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "Result"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Binary Op",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": 749.4917693805976,
+      "description": "**A op B.**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Binary Op",
+        "kind": "binop",
+        "id": "n32"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "A",
+              "any",
+              "A",
+              "self.y"
+            ],
+            [
+              "Op",
+              "string",
+              "Operator",
+              "'*'"
+            ],
+            [
+              "B",
+              "any",
+              "B",
+              "self.y"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "Result"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Binary Op",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": 497.49176938059765,
+      "description": "**A op B.**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Binary Op",
+        "kind": "binop",
+        "id": "n32"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "A",
+              "any",
+              "A",
+              "self.x"
+            ],
+            [
+              "Op",
+              "string",
+              "Operator",
+              "'*'"
+            ],
+            [
+              "B",
+              "any",
+              "B",
+              "self.x"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "Result"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Set Self Attr",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": -22.508230619402354,
+      "description": "**self.NAME = VALUE.**  Assign an instance attribute.\n\nReads naturally inside `__init__` or any method body.  Use\n**Set Attr** instead if you need to set an attribute on an\nobject other than `self`.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Set Self Attr",
+        "kind": "self_set",
+        "id": "n24"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Attribute name",
+              "x"
+            ],
+            [
+              "Value",
+              "any",
+              "Value to assign",
+              "x"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Start",
+      "color": "#2e5c2e",
+      "x": -648.1273749326305,
+      "y": -376.7198453145227,
+      "description": "Entry point of the pipeline.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Start",
+        "id": "n25"
+      },
+      "sections": [
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Next",
+              "path",
+              "First node in the chain"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Set Self Attr",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": 165.49176938059765,
+      "description": "**self.NAME = VALUE.**  Assign an instance attribute.\n\nReads naturally inside `__init__` or any method body.  Use\n**Set Attr** instead if you need to set an attribute on an\nobject other than `self`.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Set Self Attr",
+        "kind": "self_set",
+        "id": "n26"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": true,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Attribute name",
+              "y"
+            ],
+            [
+              "Value",
+              "any",
+              "Value to assign",
+              "y"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Define Function",
+      "color": "#6a5a8a",
+      "x": -302.4975102824232,
+      "y": -210.50823061940235,
+      "description": "**def NAME(args):** body via blocks.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Define Function",
+        "kind": "def",
+        "id": "n27"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Name",
+              "'__init__'"
+            ],
+            [
+              "Args",
+              "string",
+              "Args",
+              "'self,x,y'"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 0
+    },
+    {
+      "title": "Call Function",
+      "color": "#6a5a8a",
+      "x": 0.2365468910762729,
+      "y": -472.347563431921,
+      "description": "**NAME(*args, **kwargs).**",
+      "dynamic": false,
+      "metadata": {
+        "template": "Call Function",
+        "kind": "call_by_name",
+        "id": "n36"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Name",
+              "'Point'"
+            ],
+            [
+              "Args",
+              "any",
+              "Args",
+              "[3,4]"
+            ],
+            [
+              "Kwargs",
+              "any",
+              "Kwargs",
+              "{}"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "Return"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Set Variable",
+      "color": "#6a5a8a",
+      "x": 289.9613605077488,
+      "y": -450.37790931880846,
+      "description": "**Set NAME = VALUE.**  Assigns to a variable.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Set Variable",
+        "kind": "set",
+        "id": "n37"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Variable name",
+              "'p'"
+            ],
+            [
+              "Value",
+              "any",
+              "Value",
+              null
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "The stored value"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Get Variable",
+      "color": "#6a5a8a",
+      "x": 582.4323808885604,
+      "y": -410.55791123879186,
+      "description": "**Get NAME.**  Reads a variable.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Get Variable",
+        "kind": "get",
+        "id": "n38"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Name",
+              "string",
+              "Variable name",
+              "'p'"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Value",
+              "any",
+              "The value"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Method Call",
+      "color": "#6a5a8a",
+      "x": 874.9034012693719,
+      "y": -421.54273829534816,
+      "description": "**obj.method(*args, **kwargs).**\n\n- `Object` is any expression evaluating to an instance\n  (a **Call Class** output, a **Get Variable**, ...).\n- `Method` is the method name, without parentheses.\n- `Args` is a Python list of positional arguments.\n- `Kwargs` is a Python dict of keyword arguments.  Leave it\n  empty (`{}`) if the method takes none.",
+      "dynamic": false,
+      "metadata": {
+        "template": "Method Call",
+        "kind": "method_call",
+        "id": "n39"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Object",
+              "any",
+              "Object",
+              "None"
+            ],
+            [
+              "Method",
+              "string",
+              "Method name",
+              "'dist'"
+            ],
+            [
+              "Args",
+              "any",
+              "Positional args as a list",
+              "[]"
+            ],
+            [
+              "Kwargs",
+              "any",
+              "Keyword args as a dict",
+              "{}"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Result",
+              "any",
+              "Return value"
+            ]
+          ]
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "print",
+      "color": "#5a5a5a",
+      "x": 1147.7330732718847,
+      "y": -345.06684992877956,
+      "description": "Print a value to stdout.  Captured by the run panel.",
+      "dynamic": false,
+      "metadata": {
+        "template": "print",
+        "id": "n40"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Value",
+              "any",
+              "Value to print",
+              null
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "End",
+      "color": "#5c2e2e",
+      "x": 1436.6817849769523,
+      "y": -310.4407646418086,
+      "description": "Exit point of the pipeline.",
+      "dynamic": false,
+      "metadata": {
+        "template": "End",
+        "id": "n41"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Prev",
+              "path",
+              "Last node in the chain",
+              null
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
+              null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from_node": 9,
+      "from_socket": "Path Out",
+      "to_node": 1,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 0,
+      "from_socket": "Path Out",
+      "to_node": 9,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 7,
+      "from_socket": "Path Out",
+      "to_node": 0,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 3,
+      "from_socket": "Result",
+      "to_node": 2,
+      "to_socket": "Value"
+    },
+    {
+      "from_node": 4,
+      "from_socket": "Result",
+      "to_node": 3,
+      "to_socket": "B"
+    },
+    {
+      "from_node": 5,
+      "from_socket": "Result",
+      "to_node": 3,
+      "to_socket": "A"
+    },
+    {
+      "from_node": 1,
+      "from_socket": "Path Out",
+      "to_node": 5,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 3,
+      "from_socket": "Path Out",
+      "to_node": 2,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 4,
+      "from_socket": "Path Out",
+      "to_node": 3,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 5,
+      "from_socket": "Path Out",
+      "to_node": 4,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 9,
+      "from_socket": "Path Out",
+      "to_node": 6,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 6,
+      "from_socket": "Path Out",
+      "to_node": 8,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 0,
+      "from_socket": "Path Out",
+      "to_node": 10,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 10,
+      "from_socket": "Path Out",
+      "to_node": 11,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 10,
+      "from_socket": "Result",
+      "to_node": 11,
+      "to_socket": "Value"
+    },
+    {
+      "from_node": 11,
+      "from_socket": "Path Out",
+      "to_node": 12,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 12,
+      "from_socket": "Path Out",
+      "to_node": 13,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 12,
+      "from_socket": "Value",
+      "to_node": 13,
+      "to_socket": "Object"
+    },
+    {
+      "from_node": 13,
+      "from_socket": "Path Out",
+      "to_node": 14,
+      "to_socket": "Path In"
+    },
+    {
+      "from_node": 13,
+      "from_socket": "Result",
+      "to_node": 14,
+      "to_socket": "Value"
+    },
+    {
+      "from_node": 14,
+      "from_socket": "Path Out",
+      "to_node": 15,
+      "to_socket": "Path In"
+    }
+  ]
+}

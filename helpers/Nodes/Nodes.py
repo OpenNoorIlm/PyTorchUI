@@ -159,7 +159,8 @@ ROLES = [
     ("Built-ins/Variables", "Set Variable", "set",
      "**Set NAME = VALUE.**  Assigns to a variable.",
      [("Name", "string", "Variable name", "'x'"),
-      ("Value", "any", "Value", None)], [], None, None),
+      ("Value", "any", "Value", None)],
+     [("Result", "any", "The stored value")], None, None),
     ("Built-ins/Variables", "Get Variable", "get",
      "**Get NAME.**  Reads a variable.",
      [("Name", "string", "Variable name", "'x'")],
@@ -1291,6 +1292,45 @@ def _safe_var(name):
     return v
 
 
+# ---------------------------------------------------------------- #
+#  Unique node ids                                                  #
+# ---------------------------------------------------------------- #
+#
+# The runtime marker protocol routes messages by node id.  When a
+# node has no id, _safe_nid() falls back to a slug of its title --
+# which is not unique.  Four Return nodes all become "Return", and
+# the editor cannot tell which one sent the marker.
+#
+# Assign an id at build time and persist it via metadata["id"].
+# _next_node_id() increments a module-level counter; _rescan_node_ids()
+# bumps the counter past the highest existing id after a load so new
+# nodes never collide.
+
+_NODE_ID_COUNTER = [0]
+
+
+def _next_node_id():
+    _NODE_ID_COUNTER[0] += 1
+    return "n%d" % _NODE_ID_COUNTER[0]
+
+
+def _rescan_node_ids(scene):
+    """Bump the counter to at least one past the highest id in scene."""
+    mx = 0
+    try:
+        items = list(scene.items())
+    except Exception:
+        return
+    for item in items:
+        if not isinstance(item, Node):
+            continue
+        nid = str(item.metadata.get("id", ""))
+        if nid.startswith("n") and nid[1:].isdigit():
+            mx = max(mx, int(nid[1:]))
+    if mx > _NODE_ID_COUNTER[0]:
+        _NODE_ID_COUNTER[0] = mx
+
+
 def _unique_var(base, used):
     if base not in used:
         used.add(base)
@@ -1307,17 +1347,13 @@ def _unique_var(base, used):
 def _sorted_children(n):
     """Return n.blocks in the order they should be emitted.
 
-    Two sources of order:
+    Priority:
 
-      * _select_order, set at click time when the user Ctrl+clicks
-        children in a deliberate sequence.  This wins when present.
-      * visual position, top-to-bottom then left-to-right, which is
-        what layout_blocks() produces when children are attached via
-        drag-and-drop.
-
-    So: Ctrl+click in order -> attach to a parent -> code emits in
-    that order.  Or: drag children into the block slot one by one ->
-    code emits top-to-bottom.
+      1. Flow chain -- Path Out -> Path In wires between siblings.
+         This is the editor's own statement-order mechanism.
+      2. _select_order -- the order the user Ctrl+clicked the nodes,
+         used only when no flow chain connects them.
+      3. Visual position -- top-to-bottom, then left-to-right.
     """
     try:
         kids = list(n.blocks)
@@ -1330,17 +1366,60 @@ def _sorted_children(n):
             return kids
     except RuntimeError:
         return kids
-    # If any child has a nonzero _select_order, use it as the key.
-    # Nodes without one fall to the end, ordered by position.
-    if any(getattr(c, "_select_order", 0) for c in kids):
-        return sorted(
-            kids,
-            key=lambda c: (
+
+    # ---- 1. flow chain among children ---- #
+    kid_ids = {id(c) for c in kids}
+
+    next_of = {}
+    prev_of = {}
+    for c in kids:
+        for sock in c.outputs:
+            if sock.name not in ("Path Out", "Next"):
+                continue
+            found = False
+            for e in sock.connections:
+                end = getattr(e, "end_socket", None)
+                if end is None:
+                    continue
+                target = end.node
+                if target is c or id(target) not in kid_ids:
+                    continue
+                next_of[id(c)] = target
+                prev_of[id(target)] = c
+                found = True
+                break
+            if found:
+                break
+
+    ordered = []
+    seen = set()
+    if next_of or prev_of:
+        # Heads: children with no incoming flow from a sibling.
+        heads = [c for c in kids if id(c) not in prev_of]
+        # Sort heads by position so multiple chains are stable.
+        heads.sort(key=lambda c: (c.pos().y(), c.pos().x()))
+        for head in heads:
+            cur = head
+            while cur is not None and id(cur) not in seen:
+                seen.add(id(cur))
+                ordered.append(cur)
+                nxt = next_of.get(id(cur))
+                if nxt is None or id(nxt) in seen:
+                    break
+                cur = nxt
+
+    # ---- 2/3. leftovers: click order, then position ---- #
+    leftovers = [c for c in kids if id(c) not in seen]
+    if leftovers:
+        if any(getattr(c, "_select_order", 0) for c in leftovers):
+            leftovers.sort(key=lambda c: (
                 getattr(c, "_select_order", 0) or 10 ** 9,
-                c.pos().y(),
-                c.pos().x(),
-            ))
-    return sorted(kids, key=lambda c: (c.pos().y(), c.pos().x()))
+                c.pos().y(), c.pos().x()))
+        else:
+            leftovers.sort(key=lambda c: (c.pos().y(), c.pos().x()))
+        ordered.extend(leftovers)
+
+    return ordered
 
 
 
@@ -1990,10 +2069,17 @@ class Node(QGraphicsItem):
     def layout_blocks(self):
         y = self.pos().y() + self.height + _BLOCKS["slot_gap"] + _BLOCKS["slot_height"]
         x = self.pos().x() + _BLOCKS["indent"]
-        for child in self.blocks:
+        # Stack in the same order codegen emits.  _sorted_children()
+        # walks the flow chain (Path Out -> Path In) first, then falls
+        # back to click order or position.
+        try:
+            ordered = _sorted_children(self)
+        except Exception:
+            ordered = list(self.blocks)
+        for child in ordered:
             child.setPos(x, y)
             y += child.height + _BLOCKS["slot_gap"]
-        for child in self.blocks:
+        for child in ordered:
             try:
                 child.layout_blocks()
             except Exception:
@@ -2010,6 +2096,15 @@ class Node(QGraphicsItem):
         return QRectF(orct.right() - w - 5,
                       orct.top() + 2,
                       w, SECTION_HEIGHT - 4)
+
+    def append_full(self, text):
+        s = str(text) if text is not None else ""
+        cur = getattr(self, "output_full", "") or ""
+        if cur.strip() in ("", "None"):
+            self.output_full = s
+        else:
+            self.output_full = cur + "\n" + s
+        self.update()
 
     def set_full_output(self, text):
         self.output_full = str(text) if text is not None else ""
@@ -2706,6 +2801,8 @@ def build_node_from_template(template):
     n.metadata["template"] = template["name"]
     if template.get("kind"):
         n.metadata["kind"] = template["kind"]
+    if not n.metadata.get("id"):
+        n.metadata["id"] = _next_node_id()
     try:
         n.after_template_built(template)
     except Exception as _ex:
@@ -3875,6 +3972,35 @@ class NodeScene(QGraphicsScene):
         node_list = [i for i in self.items() if isinstance(i, Node)]
         index_of = {id(n): i for i, n in enumerate(node_list)}
         nodes_data = [n.to_dict() for n in node_list]
+
+        # Save block relationships: _parent_index for who the parent
+        # is, _blocks_order for the order children appear in.
+        for i, n in enumerate(node_list):
+            parent = getattr(n, "parent_node", None)
+            if parent is None:
+                continue
+            pidx = index_of.get(id(parent))
+            if pidx is None or pidx == i:
+                continue
+            nodes_data[i]["_parent_index"] = pidx
+
+        # _blocks_order lives on the PARENT dict, as a list of child
+        # ids in emission order.
+        for i, n in enumerate(node_list):
+            try:
+                kids = _sorted_children(n)
+            except Exception:
+                kids = list(getattr(n, "blocks", []) or [])
+            if not kids:
+                continue
+            ids = []
+            for k in kids:
+                kid_id = k.metadata.get("id")
+                if kid_id:
+                    ids.append(kid_id)
+            if ids:
+                nodes_data[i]["_blocks_order"] = ids
+
         edges_data = []
         for item in self.items():
             if (isinstance(item, Edge)
@@ -3947,10 +4073,66 @@ class NodeScene(QGraphicsScene):
         self.drag_socket = None
         self._tooltip = None
         created = []
-        for nd in data.get("nodes", []):
+        saved_parent = {}
+        saved_order = {}
+
+        for i, nd in enumerate(data.get("nodes", [])):
             n = self._build_saved_node(nd)
+            if not n.metadata.get("id"):
+                try:
+                    n.metadata["id"] = _next_node_id()
+                except NameError:
+                    pass
             self.addItem(n)
             created.append(n)
+            pid = nd.get("_parent_index")
+            if isinstance(pid, int) and pid != i:
+                saved_parent[i] = pid
+            order = nd.get("_blocks_order")
+            if isinstance(order, list) and order:
+                saved_order[i] = order
+
+        by_id = {}
+        for n in created:
+            nid = n.metadata.get("id")
+            if nid:
+                by_id[nid] = n
+
+        # First pass: attach in the parent's saved order.
+        attached = set()
+        for parent_idx, order in saved_order.items():
+            if not (0 <= parent_idx < len(created)):
+                continue
+            parent = created[parent_idx]
+            for child_id in order:
+                child = by_id.get(child_id)
+                if child is None or child is parent:
+                    continue
+                try:
+                    parent.add_block(child)
+                    attached.add(id(child))
+                except Exception as ex:
+                    print("[load] attach(order) failed:", ex)
+
+        # Second pass: anything left with a parent index.
+        for child_idx, parent_idx in saved_parent.items():
+            if not (0 <= parent_idx < len(created)
+                    and 0 <= child_idx < len(created)):
+                continue
+            child = created[child_idx]
+            if id(child) in attached:
+                continue
+            try:
+                created[parent_idx].add_block(child)
+            except Exception as ex:
+                print("[load] attach failed:", ex)
+
+        for n in created:
+            try:
+                n.layout_blocks()
+            except Exception:
+                pass
+
         for ed in data.get("edges", []):
             try:
                 sn = created[ed["from_node"]]
@@ -3963,6 +4145,11 @@ class NodeScene(QGraphicsScene):
                         if s.name == ed["to_socket"]), None)
             if src is not None and dst is not None:
                 self.connect_sockets(src, dst)
+
+        try:
+            _rescan_node_ids(self)
+        except NameError:
+            pass
         self.graph_changed.emit()
 
     def counts(self):
@@ -4223,12 +4410,7 @@ class NodeView(QGraphicsView):
                     sel,
                     key=lambda n: getattr(n, "_select_order", 0)
                                    or 10 ** 9)
-                count = 0
-                for c in ordered:
-                    if node.add_block(c):
-                        count += 1
-                node.layout_blocks()
-                self.scene().graph_changed.emit()
+                count = self._attach_preserving_hierarchy(node, ordered)
                 win = self.window()
                 if hasattr(win, "report"):
                     win.report(
@@ -4296,18 +4478,26 @@ class NodeView(QGraphicsView):
                 self.scene().remove_node(n)
 
 
-    def _make_children(self, parent, children):
+    def _attach_preserving_hierarchy(self, parent, children):
+        sel_ids = {id(c) for c in children}
         count = 0
         for child in children:
             if child is parent:
+                continue
+            old_parent = getattr(child, "parent_node", None)
+            if old_parent is not None and id(old_parent) in sel_ids:
                 continue
             try:
                 if parent.add_block(child):
                     count += 1
             except Exception as ex:
-                print("[children]", ex)
+                print("[attach]", ex)
         parent.layout_blocks()
         self.scene().graph_changed.emit()
+        return count
+
+    def _make_children(self, parent, children):
+        count = self._attach_preserving_hierarchy(parent, children)
         win = self.window()
         if hasattr(win, "report"):
             win.report(
@@ -5636,11 +5826,13 @@ class MainWindow(QMainWindow):
         self._setup_help_dock()
 
         # ---- undo / redo ---- #
+        # The Ctrl+Z and Ctrl+Y key sequences are attached to the
+        # Edit menu's Undo / Redo QActions in _build_menu_bar().
+        # Do not also register them here: two QShortcuts on the same
+        # key sequence make Qt print "Ambiguous shortcut overload"
+        # on every press.  Ctrl+Shift+Z has no menu item, so it is
+        # bound here.
         self._undo_mgr = _UndoManager(self.scene)
-        QShortcut(QKeySequence("Ctrl+Z"), self,
-                  activated=self._on_undo)
-        QShortcut(QKeySequence("Ctrl+Y"), self,
-                  activated=self._on_redo)
         QShortcut(QKeySequence("Ctrl+Shift+Z"), self,
                   activated=self._on_redo)
 
@@ -7680,7 +7872,6 @@ class MainWindow(QMainWindow):
                 self._show_run_dialog()
             return
         if cmd == "begin":
-            node.clear_output()
             node.set_running(True)
         elif cmd == "end":
             node.set_running(False)
@@ -7699,7 +7890,9 @@ class MainWindow(QMainWindow):
                 val = json.loads(payload)
             except Exception:
                 val = payload
-            if hasattr(node, "set_full_output"):
+            if hasattr(node, "append_full"):
+                node.append_full(val)
+            elif hasattr(node, "set_full_output"):
                 node.set_full_output(val)
         elif cmd == "stdout":
             try:
@@ -8180,6 +8373,12 @@ class MainWindow(QMainWindow):
                 if not v.startswith(("[", "(")):
                     v = "[" + v + "]"
 
+            # A positional-args field expects a Python iterable.  If
+            # the user typed a bare scalar (7, n, "x"), wrap it so
+            # f(*(...)) has something to unpack.
+            if nm == "Args" and not v.startswith(("[", "(", "{")):
+                v = "[" + v + "]"
+
             if v in ("True", "False", "None"):
                 return v
 
@@ -8277,8 +8476,17 @@ class MainWindow(QMainWindow):
             if k in ("def", "async_def", "class_"):
                 ns = n.socket("Name", is_input=True)
                 raw = (ns.value if ns else None) or n.title
-                base = _re.sub(r"[^0-9A-Za-z_]", "_",
-                               str(raw).strip("'\"")).strip("_") or "x"
+                _cleaned = _re.sub(r"[^0-9A-Za-z_]", "_",
+                                   str(raw).strip("'\""))
+                # Dunder names (__init__, __call__, ...) must keep
+                # their underscores.  Everything else is stripped of
+                # leading/trailing underscores for readability.
+                if (_cleaned.startswith("__")
+                        and _cleaned.endswith("__")
+                        and len(_cleaned) > 4):
+                    base = _cleaned
+                else:
+                    base = _cleaned.strip("_") or "x"
                 var_of[id(n)] = _uniq(base)
             else:
                 var_of[id(n)] = _uniq(n.metadata.get("id") or n.title)
@@ -8484,10 +8692,14 @@ class MainWindow(QMainWindow):
                 if ns is not None and not ns.connections and ns.value:
                     name = str(ns.value).strip().strip("'\"")
                     L.append("%s%s = %s" % (pad, name, val))
+                    # Expose the stored value on the node's own
+                    # variable so Return / print / downstream nodes
+                    # can read Set Variable.Result.
+                    L.append("%s%s = %s" % (pad, var, val))
                 else:
                     L.append("%sglobals()[str(%s)] = %s"
                              % (pad, B.get("Name") or "'x'", val))
-                L.append("%s%s = None" % (pad, var))
+                    L.append("%s%s = %s" % (pad, var, val))
                 return L, miss
             if kind == "pyui_json":
                 _p = B.get("Path") or "'graph.json'"
@@ -9096,7 +9308,13 @@ class MainWindow(QMainWindow):
             body = _sorted_children(n)
             if body:
                 for c in body:
-                    L.extend(emit(c, indent + 1))
+                    ck = _kind(c)
+                    if ck in ("def", "async_def"):
+                        L.extend(emit_def(c, indent + 1))
+                    elif ck == "class_":
+                        L.extend(emit_class(c, indent + 1))
+                    else:
+                        L.extend(emit(c, indent + 1))
             else:
                 L.append("%s    pass" % pad)
             return L
@@ -9106,24 +9324,42 @@ class MainWindow(QMainWindow):
             var = var_of[id(n)]
             bs = n.socket("Bases", is_input=True)
             bs_str = str(bs.value if bs else "''").strip("'\"").strip()
-            L = ["%sclass %s(%s):" % (pad, var, bs_str) if bs_str
-                 else "%sclass %s:" % (pad, var)]
+            # Treat None / 'None' / empty as "no base class".
+            if bs_str in ("None", "none"):
+                bs_str = ""
+            head = ("%sclass %s(%s):" % (pad, var, bs_str) if bs_str
+                    else "%sclass %s:" % (pad, var))
+            L = [head]
             body = _sorted_children(n)
             if body:
                 for c in body:
-                    L.extend(emit(c, indent + 1))
+                    ck = _kind(c)
+                    if ck in ("def", "async_def"):
+                        L.extend(emit_def(c, indent + 1))
+                    elif ck == "class_":
+                        L.extend(emit_class(c, indent + 1))
+                    else:
+                        L.extend(emit(c, indent + 1))
             else:
                 L.append("%s    pass" % pad)
             return L
 
-        hoisted = [n for n in nodes if _kind(n) in ("def", "async_def", "class_")]
+        hoisted = [n for n in nodes
+                   if _kind(n) in ("def", "async_def", "class_")
+                   and getattr(n, "parent_node", None) is None]
         hid = {id(n) for n in hoisted}
         def collect(n, acc):
             for c in _sorted_children(n):
                 acc.add(id(c))
                 collect(c, acc)
-        for h in hoisted:
-            collect(h, hid)
+        _BLOCK_KINDS = (
+            "def", "async_def", "class_",
+            "for", "while", "if",
+            "with", "try", "match", "do",
+        )
+        for _bn in nodes:
+            if _kind(_bn) in _BLOCK_KINDS:
+                collect(_bn, hid)
         top = [n for n in nodes if id(n) not in hid]
 
         inc = {id(n): 0 for n in top}

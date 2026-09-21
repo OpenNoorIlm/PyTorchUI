@@ -3,15 +3,29 @@
     {
       "title": "End",
       "color": "#5c2e2e",
-      "x": 600.0,
-      "y": 0.0,
-      "description": "Exit point of the pipeline.  The last node wires into its Path In.",
+      "x": 47.5451192797265,
+      "y": -411.446958641839,
+      "description": "Exit point of the pipeline.",
       "dynamic": false,
       "metadata": {
         "template": "End",
-        "id": "end"
+        "id": "n23"
       },
       "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Prev",
+              "path",
+              "Last node in the chain",
+              null
+            ]
+          ],
+          "outputs": []
+        },
         {
           "name": "Flow",
           "description": "Execution order (Path to Path)",
@@ -35,15 +49,15 @@
       ]
     },
     {
-      "title": "Merger",
-      "color": "#a31a6a",
-      "x": 250.0,
-      "y": 0.0,
-      "description": "Merges many inputs into one output.",
-      "dynamic": true,
+      "title": "print",
+      "color": "#5a5a5a",
+      "x": -255.5361955853731,
+      "y": -184.25632852090996,
+      "description": "Print a value to stdout.  Captured by the run panel.",
+      "dynamic": false,
       "metadata": {
-        "template": "Merger",
-        "id": "mg"
+        "template": "print",
+        "id": "n22"
       },
       "sections": [
         {
@@ -52,22 +66,126 @@
           "collapsed": false,
           "inputs": [
             [
-              "Input",
-              "string",
-              "Value to merge",
+              "Value",
+              "any",
+              "Value to print",
+              "i"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
               null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ],
+      "_parent_index": 2
+    },
+    {
+      "title": "For",
+      "color": "#6a5a8a",
+      "x": -271.5361955853731,
+      "y": -386.25632852090996,
+      "description": "**for VAR in ITERABLE:**",
+      "dynamic": false,
+      "metadata": {
+        "template": "For",
+        "kind": "for",
+        "id": "n21"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Var",
+              "string",
+              "Loop var",
+              "'i'"
             ],
             [
-              "Input2",
-              "string",
-              "",
+              "Iterable",
+              "any",
+              "Iterable",
+              "[]"
+            ]
+          ],
+          "outputs": []
+        },
+        {
+          "name": "Flow",
+          "description": "Execution order (Path to Path)",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Path In",
+              "path",
+              "Previous node in the flow",
               null
+            ]
+          ],
+          "outputs": [
+            [
+              "Path Out",
+              "path",
+              "Next node in the flow"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "title": "range",
+      "color": "#5a5a5a",
+      "x": -577.7207752559094,
+      "y": -516.324474266488,
+      "description": "Generate a range of integers.",
+      "dynamic": false,
+      "metadata": {
+        "template": "range",
+        "id": "n20"
+      },
+      "sections": [
+        {
+          "name": "Inputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [
+            [
+              "Start",
+              "int",
+              "Start (inclusive)",
+              "0"
             ],
             [
-              "Input3",
-              "string",
-              "",
-              null
+              "Stop",
+              "int",
+              "Stop (exclusive)",
+              "5"
+            ],
+            [
+              "Step",
+              "int",
+              "Step",
+              "1"
             ]
           ],
           "outputs": []
@@ -79,113 +197,9 @@
           "inputs": [],
           "outputs": [
             [
-              "Merged Output",
-              "string",
-              "Combined result"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "GPU List",
-      "color": "#085c06",
-      "x": -100.0,
-      "y": 0.0,
-      "description": "Lists available GPUs.  Populated on placement.",
-      "dynamic": true,
-      "metadata": {
-        "template": "GPU List",
-        "id": "gpus"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "GPU0",
-              "string",
-              "First GPU handle"
-            ],
-            [
-              "GPU1",
-              "string",
-              "Second GPU handle"
-            ],
-            [
-              "GPU2",
-              "string",
-              "Third GPU handle"
-            ]
-          ]
-        },
-        {
-          "name": "Flow",
-          "description": "Execution order (Path to Path)",
-          "collapsed": false,
-          "inputs": [
-            [
-              "Path In",
-              "path",
-              "Previous node in the flow",
-              null
-            ]
-          ],
-          "outputs": [
-            [
-              "Path Out",
-              "path",
-              "Next node in the flow"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Import torch",
-      "color": "#e86f0c",
-      "x": -400.0,
-      "y": 0.0,
-      "description": "Imports Torch.  Placing it unlocks the rest of the pipeline.",
-      "dynamic": false,
-      "metadata": {
-        "template": "Import torch",
-        "id": "torch"
-      },
-      "sections": [
-        {
-          "name": "Outputs",
-          "description": "",
-          "collapsed": false,
-          "inputs": [],
-          "outputs": [
-            [
-              "Torch",
-              "object",
-              "The imported torch module"
+              "Range",
+              "any",
+              "Range object"
             ]
           ]
         },
@@ -214,15 +228,28 @@
     {
       "title": "Start",
       "color": "#2e5c2e",
-      "x": -650.0,
-      "y": 0.0,
-      "description": "Entry point of the pipeline.  Wires to the first node's Path In through the auto Flow section.",
+      "x": -852.7721307062815,
+      "y": -516.3244742664881,
+      "description": "Entry point of the pipeline.",
       "dynamic": false,
       "metadata": {
         "template": "Start",
-        "id": "start"
+        "id": "n19"
       },
       "sections": [
+        {
+          "name": "Outputs",
+          "description": "",
+          "collapsed": false,
+          "inputs": [],
+          "outputs": [
+            [
+              "Next",
+              "path",
+              "First node in the chain"
+            ]
+          ]
+        },
         {
           "name": "Flow",
           "description": "Execution order (Path to Path)",
@@ -249,24 +276,6 @@
   "edges": [
     {
       "from_node": 2,
-      "from_socket": "GPU2",
-      "to_node": 1,
-      "to_socket": "Input3"
-    },
-    {
-      "from_node": 2,
-      "from_socket": "GPU1",
-      "to_node": 1,
-      "to_socket": "Input2"
-    },
-    {
-      "from_node": 2,
-      "from_socket": "GPU0",
-      "to_node": 1,
-      "to_socket": "Input"
-    },
-    {
-      "from_node": 1,
       "from_socket": "Path Out",
       "to_node": 0,
       "to_socket": "Path In"
@@ -282,6 +291,12 @@
       "from_socket": "Path Out",
       "to_node": 2,
       "to_socket": "Path In"
+    },
+    {
+      "from_node": 3,
+      "from_socket": "Range",
+      "to_node": 2,
+      "to_socket": "Iterable"
     },
     {
       "from_node": 4,
